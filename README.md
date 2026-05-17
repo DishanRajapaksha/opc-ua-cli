@@ -19,6 +19,8 @@ This repository is the OPC UA sibling of `opc-xml-da-cli`. The goal is a practic
 
 ## Install
 
+Download a binary from the GitHub Releases page, or install with Go:
+
 ```bash
 go install github.com/DishanRajapaksha/opc-ua-cli@latest
 ```
@@ -33,6 +35,24 @@ make build
 ```
 
 The binary is written to `bin/opc-ua-cli`.
+
+## Release builds
+
+Release binaries are built by GitHub Actions when a tag starting with `v` is pushed:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The release workflow builds and publishes these artefacts:
+
+- `opc-ua-cli-linux-amd64.tar.gz`
+- `opc-ua-cli-linux-arm64.tar.gz`
+- `opc-ua-cli-darwin-arm64.tar.gz`
+- `opc-ua-cli-windows-amd64.exe.zip`
+
+The workflow can also be started manually from the GitHub Actions tab. Manual runs upload build artefacts but do not publish a GitHub Release unless the workflow is running from a `v*` tag.
 
 ## YAML config
 
@@ -233,6 +253,7 @@ Aliases:
 │   ├── output     # table, text, and JSON rendering
 │   └── uaclient   # OPC UA session lifecycle and protocol operations
 ├── .github/workflows/ci.yml
+├── .github/workflows/release.yml
 ├── Makefile
 └── go.mod
 ```
