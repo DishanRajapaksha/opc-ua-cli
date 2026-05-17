@@ -42,6 +42,8 @@ func (a *App) Run(args []string) int {
 		err = a.write(args[1:])
 	case "monitor":
 		err = a.monitor(args[1:])
+	case "alarms":
+		err = a.alarms(args[1:])
 	default:
 		a.printUsage()
 		fmt.Fprintf(a.err, "unknown command %q\n", args[0])
@@ -65,6 +67,7 @@ Usage:
   opc-ua-cli read --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32'
   opc-ua-cli write --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42
   opc-ua-cli monitor --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s
+  opc-ua-cli alarms --config config.yaml --node i=2253 --min-severity 500 --interval 1s
 
 Commands:
   endpoints, status   List server endpoints and security options
@@ -72,6 +75,7 @@ Commands:
   read                Read a node value
   write               Write a scalar node value
   monitor             Subscribe to data changes
+  alarms              Subscribe to OPC UA alarm and event notifications
 
 Common flags:
   --config     YAML config file
