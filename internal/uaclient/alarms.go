@@ -197,16 +197,16 @@ func alarmEventFromFields(node string, fieldNames []string, fields []*ua.Variant
 	}
 
 	event := domain.AlarmEvent{
-		NodeID:  node,
-		Fields:  values,
-		EventID: stringValue(values["EventId"]),
-		EventType: stringValue(values["EventType"]),
-		SourceNode: stringValue(values["SourceNode"]),
-		SourceName: stringValue(values["SourceName"]),
-		Time: stringValue(values["Time"]),
+		NodeID:      node,
+		Fields:      values,
+		EventID:     stringValue(values["EventId"]),
+		EventType:   stringValue(values["EventType"]),
+		SourceNode:  stringValue(values["SourceNode"]),
+		SourceName:  stringValue(values["SourceName"]),
+		Time:        stringValue(values["Time"]),
 		ReceiveTime: stringValue(values["ReceiveTime"]),
-		Message: stringValue(values["Message"]),
-		Severity: uint16Value(values["Severity"]),
+		Message:     stringValue(values["Message"]),
+		Severity:    uint16Value(values["Severity"]),
 	}
 	return event
 }
