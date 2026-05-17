@@ -1,0 +1,9 @@
+bin/
+dist/
+*.test
+coverage.out
+opc-ua-cli
+opc-ua-cli.exe
+.DS_Store
+.idea/
+.vscode/
