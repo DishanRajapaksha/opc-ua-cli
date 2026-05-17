@@ -51,7 +51,8 @@ func (a *App) renderWrite(format string, row domain.WriteResult) error {
 }
 
 func (a *App) renderDataChange(format string, row domain.DataChange) error {
-	if output.NormaliseFormat(format) == output.FormatJSON {
+	switch output.NormaliseFormat(format) {
+	case output.FormatJSON, output.FormatJSONL:
 		return output.WriteJSONLine(a.out, row)
 	}
 	_, err := fmt.Fprintln(a.out, row.SourceTimestamp, row.NodeID, row.Value)
@@ -59,7 +60,8 @@ func (a *App) renderDataChange(format string, row domain.DataChange) error {
 }
 
 func (a *App) renderAlarmEvent(format string, row domain.AlarmEvent) error {
-	if output.NormaliseFormat(format) == output.FormatJSON {
+	switch output.NormaliseFormat(format) {
+	case output.FormatJSON, output.FormatJSONL:
 		return output.WriteJSONLine(a.out, row)
 	}
 

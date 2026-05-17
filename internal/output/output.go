@@ -12,6 +12,7 @@ const (
 	FormatTable = "table"
 	FormatText  = "text"
 	FormatJSON  = "json"
+	FormatJSONL = "jsonl"
 )
 
 func NormaliseFormat(value string) string {
@@ -22,6 +23,8 @@ func NormaliseFormat(value string) string {
 		return FormatText
 	case FormatJSON:
 		return FormatJSON
+	case FormatJSONL:
+		return FormatJSONL
 	default:
 		return value
 	}
