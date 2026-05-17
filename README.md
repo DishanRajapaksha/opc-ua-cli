@@ -2,7 +2,7 @@
 
 A small, script-friendly OPC UA command-line client written in Go.
 
-This repository is the OPC UA sibling of `opc-xml-da-cli`. The goal is a practical field tool for browsing, reading, writing, and monitoring OPC UA nodes without dragging a GUI into an SSH session like a grand piano through a window.
+This repository is the OPC UA sibling of `opc-xml-da-cli`. The goal is a practical field tool for browsing, reading, writing, monitoring node values, and subscribing to OPC UA alarms/events without dragging a GUI into an SSH session like a grand piano through a window.
 
 ## Features
 
@@ -10,7 +10,8 @@ This repository is the OPC UA sibling of `opc-xml-da-cli`. The goal is a practic
 - Browse nodes from any root node.
 - Read scalar node values.
 - Write scalar node values with explicit types.
-- Monitor one or more nodes using OPC UA subscriptions.
+- Monitor one or more nodes using OPC UA data-change subscriptions.
+- Subscribe to OPC UA alarm/event notifications with severity filtering.
 - Output as tables, plain text, or JSON.
 - Support anonymous and username/password authentication.
 - Support OPC UA security policy/mode selection with client certificate and key files.
@@ -98,7 +99,7 @@ Write a scalar value:
 opc-ua-cli write --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42
 ```
 
-Monitor a node:
+Monitor a node value:
 
 ```bash
 opc-ua-cli monitor --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s
@@ -110,11 +111,50 @@ Monitor for a fixed time:
 opc-ua-cli monitor --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s --duration 30s
 ```
 
+Subscribe to alarms/events from the Server object:
+
+```bash
+opc-ua-cli alarms --config config.yaml --node i=2253 --min-severity 500 --interval 1s
+```
+
+Emit alarms/events as JSON lines:
+
+```bash
+opc-ua-cli alarms --config config.yaml --node i=2253 --min-severity 0 --format json
+```
+
+Run an alarm/event subscription for a fixed time:
+
+```bash
+opc-ua-cli alarms --config config.yaml --node i=2253 --min-severity 500 --interval 1s --duration 30s
+```
+
 You can still skip the config file and pass connection flags directly:
 
 ```bash
 opc-ua-cli read --endpoint opc.tcp://localhost:4840 --node 'ns=2;s=Demo.Static.Scalar.Int32'
 ```
+
+## Alarm and event subscriptions
+
+The `alarms` command uses an OPC UA event subscription. By default it subscribes to `i=2253`, the standard Server object. Some servers expose alarm/event notifications on a different object, so pass that node with `--node` when needed.
+
+Selected event fields include:
+
+- `EventId`
+- `EventType`
+- `SourceNode`
+- `SourceName`
+- `Time`
+- `ReceiveTime`
+- `Message`
+- `Severity`
+- `ConditionName`
+- `ActiveState`
+- `AckedState`
+- `Retain`
+
+`--min-severity` accepts values from `0` to `1000`.
 
 ## Security and authentication
 
@@ -211,6 +251,6 @@ CI runs formatting, tests, and a build on pushes and pull requests.
 
 The CLI intentionally uses subcommands only. OPC UA has enough operation types that a flat flag-only interface becomes flag soup quickly.
 
-The config file is deliberately small and only covers connection settings. Node IDs, values, browse depth, output format, and monitor interval stay on the command line because those usually change per operation.
+The config file is deliberately small and only covers connection settings. Node IDs, values, browse depth, output format, monitor interval, and alarm severity stay on the command line because those usually change per operation.
 
 The OPC UA implementation is isolated under `internal/uaclient`, so command parsing, output formatting, and protocol handling do not melt into one regrettable soup.
