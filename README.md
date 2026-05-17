@@ -2,8 +2,6 @@
 
 A small, script-friendly OPC UA command-line client written in Go.
 
-This repository is the OPC UA sibling of `opc-xml-da-cli`. The goal is a practical field tool for browsing, reading, writing, monitoring node values, and subscribing to OPC UA alarms/events without dragging a GUI into an SSH session like a grand piano through a window.
-
 ## Features
 
 - Discover OPC UA server endpoints and supported security modes.
@@ -244,13 +242,3 @@ make fmt
 make test
 make build
 ```
-
-CI runs formatting, tests, and a build on pushes and pull requests.
-
-## Design notes
-
-The CLI intentionally uses subcommands only. OPC UA has enough operation types that a flat flag-only interface becomes flag soup quickly.
-
-The config file is deliberately small and only covers connection settings. Node IDs, values, browse depth, output format, monitor interval, and alarm severity stay on the command line because those usually change per operation.
-
-The OPC UA implementation is isolated under `internal/uaclient`, so command parsing, output formatting, and protocol handling do not melt into one regrettable soup.
