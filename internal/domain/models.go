@@ -40,3 +40,17 @@ type DataChange struct {
 	Value           interface{} `json:"value"`
 	SourceTimestamp string      `json:"sourceTimestamp,omitempty"`
 }
+
+// AlarmEvent is emitted by an OPC UA event subscription.
+type AlarmEvent struct {
+	NodeID     string                 `json:"nodeId"`
+	EventID    string                 `json:"eventId,omitempty"`
+	EventType  string                 `json:"eventType,omitempty"`
+	SourceNode string                 `json:"sourceNode,omitempty"`
+	SourceName string                 `json:"sourceName,omitempty"`
+	Time       string                 `json:"time,omitempty"`
+	ReceiveTime string               `json:"receiveTime,omitempty"`
+	Message    string                 `json:"message,omitempty"`
+	Severity   uint16                 `json:"severity,omitempty"`
+	Fields     map[string]interface{} `json:"fields,omitempty"`
+}
