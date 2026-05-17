@@ -21,9 +21,11 @@ func (a *App) newFlagSet(name string) *flag.FlagSet {
 func (a *App) endpoints(args []string) error {
 	fs := a.newFlagSet("endpoints")
 	cfg := config.DefaultClientConfig()
-	configPath := ""
+	configPath := config.DefaultConfigPath
+	profile := ""
 	format := "table"
-	fs.StringVar(&configPath, "config", "", "YAML config file")
+	fs.StringVar(&configPath, "config", config.DefaultConfigPath, "YAML config file")
+	fs.StringVar(&profile, "profile", "", "config profile name")
 	fs.StringVar(&cfg.Endpoint, "endpoint", cfg.Endpoint, "OPC UA endpoint URL")
 	fs.DurationVar(&cfg.Timeout, "timeout", cfg.Timeout, "request timeout")
 	fs.StringVar(&format, "format", format, "output format: table, json")
@@ -31,7 +33,7 @@ func (a *App) endpoints(args []string) error {
 		return err
 	}
 
-	fileCfg, err := config.LoadClientConfig(configPath)
+	fileCfg, err := config.LoadClientConfigForProfile(configPath, profile)
 	if err != nil {
 		return err
 	}

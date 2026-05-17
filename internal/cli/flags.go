@@ -10,6 +10,7 @@ type commonOptions struct {
 	client     config.ClientConfig
 	format     string
 	configPath string
+	profile    string
 }
 
 func addCommonFlags(fs *flag.FlagSet, opts *commonOptions) {
@@ -18,6 +19,7 @@ func addCommonFlags(fs *flag.FlagSet, opts *commonOptions) {
 	opts.configPath = config.DefaultConfigPath
 
 	fs.StringVar(&opts.configPath, "config", config.DefaultConfigPath, "YAML config file")
+	fs.StringVar(&opts.profile, "profile", "", "config profile name")
 	fs.StringVar(&opts.client.Endpoint, "endpoint", cfg.Endpoint, "OPC UA endpoint URL")
 	fs.StringVar(&opts.client.Policy, "policy", cfg.Policy, "security policy")
 	fs.StringVar(&opts.client.Mode, "mode", cfg.Mode, "security mode")
@@ -30,7 +32,7 @@ func addCommonFlags(fs *flag.FlagSet, opts *commonOptions) {
 }
 
 func (opts *commonOptions) applyConfig(fs *flag.FlagSet) error {
-	fileCfg, err := config.LoadClientConfig(opts.configPath)
+	fileCfg, err := config.LoadClientConfigForProfile(opts.configPath, opts.profile)
 	if err != nil {
 		return err
 	}
