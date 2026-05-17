@@ -216,3 +216,71 @@ func (a *App) monitor(args []string) error {
 
 	return nil
 }
+
+func (a *App) alarms(args []string) error {
+	fs := a.newFlagSet("alarms")
+	common := commonOptions{}
+	addCommonFlags(fs, &common)
+	node := fs.String("node", "i=2253", "event source node id; i=2253 is the Server object")
+	interval := fs.Duration("interval", time.Second, "subscription interval")
+	duration := fs.Duration("duration", 0, "stop after this duration; zero runs until interrupted")
+	minSeverity := fs.Uint("min-severity", 0, "minimum alarm/event severity from 0 to 1000")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if err := common.applyConfig(fs); err != nil {
+		return err
+	}
+	if *minSeverity > 1000 {
+		return errors.New("--min-severity must be between 0 and 1000")
+	}
+
+	connectCtx, connectCancel := context.WithTimeout(context.Background(), common.client.Timeout)
+	defer connectCancel()
+
+	service := uaclient.NewService(common.client)
+	if err := service.Connect(connectCtx); err != nil {
+		return err
+	}
+	defer service.Close(context.Background())
+
+	runCtx := context.Background()
+	if *duration > 0 {
+		var cancel context.CancelFunc
+		runCtx, cancel = context.WithTimeout(runCtx, *duration)
+		defer cancel()
+	}
+
+	subscription, err := service.SubscribeAlarms(runCtx, *node, *interval, uint16(*minSeverity))
+	if err != nil {
+		return err
+	}
+	defer subscription.Close()
+
+	events := subscription.Events
+	errorsCh := subscription.Errors
+	format := output.NormaliseFormat(common.format)
+
+	for events != nil || errorsCh != nil {
+		select {
+		case event, ok := <-events:
+			if !ok {
+				events = nil
+				continue
+			}
+			if err := a.renderAlarmEvent(format, event); err != nil {
+				return err
+			}
+		case err, ok := <-errorsCh:
+			if !ok {
+				errorsCh = nil
+				continue
+			}
+			fmt.Fprintln(a.err, err)
+		case <-runCtx.Done():
+			return nil
+		}
+	}
+
+	return nil
+}
