@@ -19,6 +19,9 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Download dependencies
+        run: go mod download
+
       - name: Check formatting
         run: test -z "$(gofmt -l .)"
 
@@ -26,4 +29,6 @@ jobs:
         run: go test ./...
 
       - name: Build
-        run: go build -o bin/opc-ua-cli .
+        run: |
+          mkdir -p bin
+          go build -o bin/opc-ua-cli .
