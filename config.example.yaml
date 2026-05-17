@@ -1,0 +1,12 @@
+endpoint: opc.tcp://localhost:4840
+policy: None
+mode: None
+timeout: 10s
+
+# Optional authentication.
+# username: user
+# password: secret
+
+# Optional client certificate settings for secured endpoints.
+# cert: client-cert.pem
+# key: client-key.pem
