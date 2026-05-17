@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -96,4 +97,26 @@ func writeTempConfig(t *testing.T, contents string) string {
 		t.Fatalf("write temp config: %v", err)
 	}
 	return path
+}
+
+func TestStarterConfigYAMLIncludesExpectedFields(t *testing.T) {
+	out, err := StarterConfigYAML()
+	if err != nil {
+		t.Fatalf("StarterConfigYAML returned error: %v", err)
+	}
+	text := string(out)
+	for _, expected := range []string{
+		"endpoint:",
+		"policy:",
+		"mode:",
+		"timeout:",
+		"username:",
+		"password:",
+		"cert_base64:",
+		"key_base64:",
+	} {
+		if !strings.Contains(text, expected) {
+			t.Fatalf("starter config is missing %q", expected)
+		}
+	}
 }
