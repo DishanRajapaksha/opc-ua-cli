@@ -3,10 +3,13 @@ package uaclient
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
 	"strings"
 
 	"github.com/DishanRajapaksha/opc-ua-cli/internal/config"
 	"github.com/gopcua/opcua"
+	opcdebug "github.com/gopcua/opcua/debug"
 	"github.com/gopcua/opcua/ua"
 )
 
@@ -21,6 +24,12 @@ func NewService(cfg config.ClientConfig) *Service {
 }
 
 func (s *Service) Connect(ctx context.Context) error {
+	if s.cfg.Debug {
+		opcdebug.Enable = true
+		opcdebug.Logger = log.New(os.Stderr, "opcua-debug: ", 0)
+	}
+	s.verbosef("connect start endpoint=%s timeout=%s policy=%s mode=%s auth=%s cert=%t key=%t", s.cfg.Endpoint, s.cfg.Timeout, s.cfg.Policy, s.cfg.Mode, authMode(s.cfg), s.hasCert(), s.hasKey())
+
 	authType := ua.UserTokenTypeAnonymous
 	auth := opcua.AuthAnonymous()
 	if s.cfg.Username != "" {
@@ -51,6 +60,7 @@ func (s *Service) Connect(ctx context.Context) error {
 
 	endpoint := s.cfg.Endpoint
 	if s.usesEndpointSelection() {
+		s.verbosef("endpoint selection enabled")
 		endpoints, err := opcua.GetEndpoints(ctx, s.cfg.Endpoint)
 		if err != nil {
 			return fmt.Errorf("%w: cannot fetch server endpoints", ErrConnection)
@@ -62,6 +72,7 @@ func (s *Service) Connect(ctx context.Context) error {
 		}
 
 		endpoint = selected.EndpointURL
+		s.verbosef("selected endpoint=%s", endpoint)
 		opts = append(opts, opcua.SecurityFromEndpoint(selected, authType))
 	}
 
@@ -75,9 +86,32 @@ func (s *Service) Connect(ctx context.Context) error {
 		}
 		return fmt.Errorf("%w: failed to connect to endpoint", ErrConnection)
 	}
+	s.verbosef("session established")
 
 	s.client = client
 	return nil
+}
+
+func (s *Service) verbosef(format string, args ...interface{}) {
+	if !s.cfg.Verbose {
+		return
+	}
+	fmt.Fprintf(os.Stderr, "verbose: "+format+"\n", args...)
+}
+
+func authMode(cfg config.ClientConfig) string {
+	if cfg.Username != "" {
+		return "username"
+	}
+	return "anonymous"
+}
+
+func (s *Service) hasCert() bool {
+	return len(s.cfg.CertDER) > 0 || s.cfg.CertFile != ""
+}
+
+func (s *Service) hasKey() bool {
+	return s.cfg.PrivateKey != nil || s.cfg.KeyFile != ""
 }
 
 func (s *Service) Close(ctx context.Context) {

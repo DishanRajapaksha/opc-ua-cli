@@ -23,7 +23,7 @@ func (a *App) completions(args []string) error {
 }
 
 const completionSubcommands = "endpoints status namespaces browse attributes read write monitor watch alarms test-connection validate-config init-config completions help"
-const completionCommonFlags = "--config --profile --endpoint --policy --mode --username --password --cert --key --timeout --format"
+const completionCommonFlags = "--config --profile --endpoint --policy --mode --username --password --cert --key --timeout --format --verbose --debug"
 
 const bashCompletionScript = `#!/usr/bin/env bash
 _opc_ua_cli_completions() {
@@ -58,7 +58,7 @@ _opc_ua_cli_completions() {
       COMPREPLY=( $(compgen -W "${common_flags} --node --interval --duration --min-severity" -- "${cur}") )
       ;;
     endpoints|status)
-      COMPREPLY=( $(compgen -W "--config --profile --endpoint --timeout --format" -- "${cur}") )
+      COMPREPLY=( $(compgen -W "--config --profile --endpoint --timeout --format --verbose --debug" -- "${cur}") )
       ;;
     namespaces|test-connection|validate-config)
       COMPREPLY=( $(compgen -W "${common_flags}" -- "${cur}") )
@@ -110,6 +110,8 @@ _opc_ua_cli_completions() {
     '--key[Client private key file]:key:_files'
     '--timeout[Request timeout]:duration:'
     '--format[Output format]:format:(table text json jsonl)'
+    '--verbose[Print high-level connection decisions]'
+    '--debug[Enable lower-level OPC UA client debug logging]'
   )
 
   if (( CURRENT == 2 )); then
@@ -137,7 +139,7 @@ _opc_ua_cli_completions() {
       _arguments $common_flags '--node[event source node]:node:' '--interval[subscription interval]:interval:' '--duration[stop after duration]:duration:' '--min-severity[min severity]:severity:'
       ;;
     endpoints|status)
-      _arguments '--config[YAML config file]:config file:_files' '--profile[Config profile name]:profile:' '--endpoint[OPC UA endpoint URL]:endpoint:' '--timeout[Request timeout]:duration:' '--format[Output format]:format:(table json)'
+      _arguments '--config[YAML config file]:config file:_files' '--profile[Config profile name]:profile:' '--endpoint[OPC UA endpoint URL]:endpoint:' '--timeout[Request timeout]:duration:' '--format[Output format]:format:(table json)' '--verbose[Print high-level connection decisions]' '--debug[Enable lower-level OPC UA client debug logging]'
       ;;
     namespaces|test-connection|validate-config)
       _arguments $common_flags

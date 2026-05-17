@@ -11,12 +11,14 @@ func TestParseScalar(t *testing.T) {
 	}{
 		{name: "string", valueType: "string", raw: "abc", want: "abc"},
 		{name: "bool", valueType: "bool", raw: "true", want: true},
+		{name: "int8", valueType: "int8", raw: "-5", want: int8(-5)},
 		{name: "int16", valueType: "int16", raw: "-12", want: int16(-12)},
 		{name: "uint16", valueType: "uint16", raw: "12", want: uint16(12)},
-		{name: "int32 alias", valueType: "int", raw: "42", want: int32(42)},
-		{name: "uint32 alias", valueType: "uint", raw: "42", want: uint32(42)},
+		{name: "int32", valueType: "int32", raw: "42", want: int32(42)},
+		{name: "uint8", valueType: "uint8", raw: "7", want: byte(7)},
+		{name: "uint32", valueType: "uint32", raw: "42", want: uint32(42)},
 		{name: "float32", valueType: "float32", raw: "12.5", want: float32(12.5)},
-		{name: "float64", valueType: "double", raw: "12.5", want: float64(12.5)},
+		{name: "float64", valueType: "float64", raw: "12.5", want: float64(12.5)},
 	}
 
 	for _, tt := range tests {

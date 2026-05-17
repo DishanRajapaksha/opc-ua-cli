@@ -51,6 +51,8 @@ func (a *App) validateConfig(args []string) error {
 	profile := ""
 	fs.StringVar(&configPath, "config", config.DefaultConfigPath, "YAML config file")
 	fs.StringVar(&profile, "profile", "", "config profile name")
+	verbose := fs.Bool("verbose", false, "print high-level connection decisions")
+	debug := fs.Bool("debug", false, "enable lower-level OPC UA client debug logging")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -61,6 +63,8 @@ func (a *App) validateConfig(args []string) error {
 	if err := config.ValidateClientConfig(cfg); err != nil {
 		return err
 	}
+	_ = verbose
+	_ = debug
 	fmt.Fprintln(a.out, "config validation: PASS")
 	return nil
 }
@@ -82,6 +86,8 @@ func (a *App) endpoints(args []string) error {
 	fs.StringVar(&cfg.Endpoint, "endpoint", cfg.Endpoint, "OPC UA endpoint URL")
 	fs.DurationVar(&cfg.Timeout, "timeout", cfg.Timeout, "request timeout")
 	fs.StringVar(&format, "format", format, "output format: table, json")
+	fs.BoolVar(&cfg.Verbose, "verbose", false, "print high-level connection decisions")
+	fs.BoolVar(&cfg.Debug, "debug", false, "enable lower-level OPC UA client debug logging")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}

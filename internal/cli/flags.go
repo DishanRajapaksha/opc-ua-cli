@@ -11,6 +11,8 @@ type commonOptions struct {
 	format     string
 	configPath string
 	profile    string
+	verbose    bool
+	debug      bool
 }
 
 func addCommonFlags(fs *flag.FlagSet, opts *commonOptions) {
@@ -29,6 +31,8 @@ func addCommonFlags(fs *flag.FlagSet, opts *commonOptions) {
 	fs.StringVar(&opts.client.KeyFile, "key", cfg.KeyFile, "client private key file")
 	fs.DurationVar(&opts.client.Timeout, "timeout", cfg.Timeout, "request timeout")
 	fs.StringVar(&opts.format, "format", "table", "output format: table, text, json, jsonl")
+	fs.BoolVar(&opts.verbose, "verbose", false, "print high-level connection decisions")
+	fs.BoolVar(&opts.debug, "debug", false, "enable lower-level OPC UA client debug logging")
 }
 
 func (opts *commonOptions) applyConfig(fs *flag.FlagSet) error {
@@ -65,6 +69,8 @@ func (opts *commonOptions) applyConfig(fs *flag.FlagSet) error {
 	if visited["timeout"] {
 		opts.client.Timeout = cliCfg.Timeout
 	}
+	opts.client.Verbose = opts.verbose
+	opts.client.Debug = opts.debug
 
 	return nil
 }

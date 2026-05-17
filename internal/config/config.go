@@ -32,6 +32,8 @@ type ClientConfig struct {
 	PrivateKey *rsa.PrivateKey
 	Timeout    time.Duration
 	Namespaces map[string]string
+	Verbose    bool
+	Debug      bool
 }
 
 func DefaultClientConfig() ClientConfig {

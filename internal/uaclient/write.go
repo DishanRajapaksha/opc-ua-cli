@@ -58,34 +58,34 @@ func parseScalar(valueType string, raw string) (interface{}, error) {
 	switch strings.ToLower(strings.TrimSpace(valueType)) {
 	case "", "string":
 		return raw, nil
-	case "bool", "boolean":
+	case "bool":
 		return strconv.ParseBool(raw)
-	case "int8", "sbyte":
+	case "int8":
 		value, err := strconv.ParseInt(raw, 10, 8)
 		return int8(value), err
 	case "int16":
 		value, err := strconv.ParseInt(raw, 10, 16)
 		return int16(value), err
-	case "int", "int32":
+	case "int32":
 		value, err := strconv.ParseInt(raw, 10, 32)
 		return int32(value), err
 	case "int64":
 		return strconv.ParseInt(raw, 10, 64)
-	case "uint8", "byte":
+	case "uint8":
 		value, err := strconv.ParseUint(raw, 10, 8)
 		return byte(value), err
 	case "uint16":
 		value, err := strconv.ParseUint(raw, 10, 16)
 		return uint16(value), err
-	case "uint", "uint32":
+	case "uint32":
 		value, err := strconv.ParseUint(raw, 10, 32)
 		return uint32(value), err
 	case "uint64":
 		return strconv.ParseUint(raw, 10, 64)
-	case "float", "float32":
+	case "float32":
 		value, err := strconv.ParseFloat(raw, 32)
 		return float32(value), err
-	case "double", "float64":
+	case "float64":
 		return strconv.ParseFloat(raw, 64)
 	default:
 		return nil, fmt.Errorf("unsupported scalar type %q", valueType)

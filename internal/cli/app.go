@@ -117,6 +117,8 @@ Common flags:
   --key        Client private key file
   --timeout    Request timeout
   --format     table, text, json, or jsonl
+  --verbose    Print high-level connection decisions
+  --debug      Enable lower-level OPC UA client debug logging
 
 CLI flags override values loaded from --config and --profile.`)
 }

@@ -1,29 +1,36 @@
 # OPC UA CLI
 
-A small, script-friendly OPC UA command-line client written in Go.
+A script-friendly OPC UA command-line client written in Go.
 
-## Features
+## At a Glance
 
-- Discover OPC UA server endpoints and supported security modes.
-- Browse nodes from any root node.
-- Read scalar node values.
-- Write scalar node values with explicit types.
-- Monitor one or more nodes using OPC UA data-change subscriptions.
-- Subscribe to OPC UA alarm/event notifications with severity filtering.
-- Output as tables, plain text, or JSON.
-- Support anonymous and username/password authentication.
-- Support OPC UA security policy/mode selection with client certificate and key files.
-- Load repeated connection settings from a YAML config file.
+| Task | Command |
+|---|---|
+| Validate local config | `opc-ua-cli validate-config` |
+| Test connectivity/auth/security | `opc-ua-cli test-connection` |
+| List server endpoints | `opc-ua-cli endpoints` |
+| List namespace indexes and URIs | `opc-ua-cli namespaces` |
+| Browse from root node | `opc-ua-cli browse --node i=84 --depth 1` |
+| Inspect node metadata/permissions | `opc-ua-cli attributes --node 'ns=2;s=Demo.Value'` |
+| Read one node | `opc-ua-cli read --node 'ns=2;s=Demo.Static.Scalar.Int32'` |
+| Read multiple nodes | `opc-ua-cli read --node 'ns=2;s=A' --node 'ns=2;s=B'` |
+| Read nodes from file | `opc-ua-cli read --nodes nodes.txt` |
+| Dry-run a write | `opc-ua-cli write --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42 --dry-run` |
+| Execute a write | `opc-ua-cli write --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42 --yes` |
+| Monitor (subscription) | `opc-ua-cli monitor --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s` |
+| Watch (polling) | `opc-ua-cli watch --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s` |
+| Troubleshoot with verbose logs | `opc-ua-cli read --node 'ns=2;s=Demo.Value' --verbose` |
+| Troubleshoot with debug logs | `opc-ua-cli read --node 'ns=2;s=Demo.Value' --debug` |
 
 ## Install
 
-Download a binary from the GitHub Releases page, or install with Go:
+Install with Go:
 
 ```bash
 go install github.com/DishanRajapaksha/opc-ua-cli@latest
 ```
 
-Or build from source:
+Build from source:
 
 ```bash
 git clone https://github.com/DishanRajapaksha/opc-ua-cli.git
@@ -32,11 +39,11 @@ make test
 make build
 ```
 
-The binary is written to `bin/opc-ua-cli`.
+Binary output: `bin/opc-ua-cli`
 
-## YAML config
+## First Run (Recommended)
 
-Create a local config file:
+1. Create `config.yaml`:
 
 ```yaml
 endpoint: opc.tcp://localhost:4840
@@ -57,143 +64,139 @@ timeout: 10s
 #   plant: urn:plant:model
 ```
 
-There is also a `config.example.yaml` in the repo.
-
-Use it like this:
+2. Validate config locally (no server connection):
 
 ```bash
-opc-ua-cli read --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32'
+opc-ua-cli validate-config
 ```
 
-CLI flags override the config file, so this is valid when you want a one-off endpoint change:
+3. Verify endpoint/auth/security with a real server test:
+
+```bash
+opc-ua-cli test-connection
+```
+
+4. Inspect namespaces and read one value:
+
+```bash
+opc-ua-cli namespaces
+opc-ua-cli read --node 'ns=2;s=Demo.Static.Scalar.Int32'
+```
+
+## Config and Profiles
+
+Use a custom config file:
+
+```bash
+opc-ua-cli read --config site-a.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32'
+```
+
+Use a profile from config:
+
+```bash
+opc-ua-cli read --config config.yaml --profile site-a --node 'ns=2;s=Demo.Static.Scalar.Int32'
+```
+
+Override config values with CLI flags:
 
 ```bash
 opc-ua-cli read --config config.yaml --endpoint opc.tcp://192.168.1.50:4840 --node 'ns=2;s=Demo.Static.Scalar.Int32'
 ```
 
-## Usage
+## Core Commands
 
-List endpoints:
-
-```bash
-opc-ua-cli endpoints --config config.yaml
-```
-
-List namespace indexes and URIs:
+### Discover and inspect
 
 ```bash
-opc-ua-cli namespaces --config config.yaml
+opc-ua-cli endpoints
+opc-ua-cli namespaces
+opc-ua-cli browse --node i=84 --depth 1
+opc-ua-cli attributes --node 'ns=2;s=Demo.Value'
 ```
 
-Browse nodes:
+### Read values
 
 ```bash
-opc-ua-cli browse --config config.yaml --node i=84 --depth 1
+# Single node
+opc-ua-cli read --node 'ns=2;s=Demo.Static.Scalar.Int32'
+
+# Multiple nodes (output keeps request order)
+opc-ua-cli read --node 'ns=2;s=A' --node 'ns=2;s=B'
+
+# From file (one node per line, blank lines and # comments ignored)
+opc-ua-cli read --nodes nodes.txt
+
+# Namespace alias/URI form
+opc-ua-cli read --node 'nsu=plant;s=Inverter01.ActivePower'
 ```
 
-Inspect node attributes:
+### Write values
 
 ```bash
-opc-ua-cli attributes --config config.yaml --node 'ns=2;s=Demo.Value'
+# Preview only (no write request sent)
+opc-ua-cli write --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42 --dry-run
+
+# Execute write (recommended for scripts)
+opc-ua-cli write --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42 --yes
+
+# Multiple writes
+opc-ua-cli write --item 'ns=2;s=A:int32:42' --item 'ns=2;s=B:bool:true' --yes
 ```
 
-Read a node:
+Supported write types:
+
+- `string`
+- `bool`
+- `int8`, `int16`, `int32`, `int64`
+- `uint8`, `uint16`, `uint32`, `uint64`
+- `float32`, `float64`
+
+Write safety behavior:
+
+- Prints endpoint, config/profile source, node, type, and value before write.
+- Requires confirmation unless `--yes` is provided.
+- Fails in non-interactive mode without `--yes`.
+
+### Stream changes
 
 ```bash
-opc-ua-cli read --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32'
+# Subscription-based
+opc-ua-cli monitor --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s
+
+# Polling-based alternative (useful when subscriptions are unreliable)
+opc-ua-cli watch --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s
+
+# Fixed duration + jsonl output
+opc-ua-cli watch --node 'ns=2;s=Demo.Static.Scalar.Int32' --duration 1m --format jsonl
 ```
 
-Read multiple nodes in order:
+### Alarm/event subscriptions
 
 ```bash
-opc-ua-cli read --config config.yaml --node 'ns=2;s=A' --node 'ns=2;s=B'
+opc-ua-cli alarms --node i=2253 --min-severity 500 --interval 1s
+opc-ua-cli alarms --node i=2253 --min-severity 0 --format json
 ```
 
-Read nodes from file (one node per line):
+Notes:
+
+- Default alarm source node is `i=2253` (Server object).
+- `--min-severity` range is `0` to `1000`.
+
+## Troubleshooting and Diagnostics
+
+Verbose and debug modes:
 
 ```bash
-opc-ua-cli read --config config.yaml --nodes nodes.txt
+opc-ua-cli read --node 'ns=2;s=Demo.Value' --verbose
+opc-ua-cli read --node 'ns=2;s=Demo.Value' --debug
 ```
 
-Read using namespace URI/alias form:
+- `--verbose`: high-level connection decisions.
+- `--debug`: lower-level OPC UA client debug logging (where supported by the client library).
 
-```bash
-opc-ua-cli read --config config.yaml --node 'nsu=plant;s=Inverter01.ActivePower'
-```
+Sensitive values (passwords, inline cert/key material) are not printed by CLI verbose logs.
 
-Read as JSON:
-
-```bash
-opc-ua-cli read --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --format json
-```
-
-Write a scalar value:
-
-```bash
-opc-ua-cli write --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42 --yes
-```
-
-Write multiple nodes:
-
-```bash
-opc-ua-cli write --config config.yaml --item 'ns=2;s=A:int32:42' --item 'ns=2;s=B:bool:true' --yes
-```
-
-Preview a write without sending it:
-
-```bash
-opc-ua-cli write --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42 --dry-run
-```
-
-Monitor a node value:
-
-```bash
-opc-ua-cli monitor --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s
-```
-
-Watch nodes with polling (no OPC UA subscriptions):
-
-```bash
-opc-ua-cli watch --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s
-```
-
-Watch with duration and JSON lines:
-
-```bash
-opc-ua-cli watch --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --duration 1m --format jsonl
-```
-
-Monitor for a fixed time:
-
-```bash
-opc-ua-cli monitor --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s --duration 30s
-```
-
-Subscribe to alarms/events from the Server object:
-
-```bash
-opc-ua-cli alarms --config config.yaml --node i=2253 --min-severity 500 --interval 1s
-```
-
-Emit alarms/events as JSON lines:
-
-```bash
-opc-ua-cli alarms --config config.yaml --node i=2253 --min-severity 0 --format json
-```
-
-Run an alarm/event subscription for a fixed time:
-
-```bash
-opc-ua-cli alarms --config config.yaml --node i=2253 --min-severity 500 --interval 1s --duration 30s
-```
-
-You can still skip the config file and pass connection flags directly:
-
-```bash
-opc-ua-cli read --endpoint opc.tcp://localhost:4840 --node 'ns=2;s=Demo.Static.Scalar.Int32'
-```
-
-Run field diagnostics:
+Field diagnostics command:
 
 ```bash
 opc-ua-cli test-connection
@@ -201,69 +204,24 @@ opc-ua-cli test-connection --config site-a.yaml
 opc-ua-cli test-connection --profile site-a
 ```
 
-Validate config locally (no OPC UA connection):
+## Output Formats
+
+Commands support formats where applicable:
+
+- `table` (default)
+- `text`
+- `json`
+- `jsonl`
+
+Example:
 
 ```bash
-opc-ua-cli validate-config
-opc-ua-cli validate-config --config site-a.yaml
-opc-ua-cli validate-config --profile site-a
+opc-ua-cli read --node 'ns=2;s=Demo.Static.Scalar.Int32' --format json
 ```
 
-Generate shell completions:
+## Security and Authentication Examples
 
-```bash
-opc-ua-cli completions bash
-opc-ua-cli completions zsh
-```
-
-Install examples:
-
-```bash
-# bash
-opc-ua-cli completions bash > /etc/bash_completion.d/opc-ua-cli
-
-# zsh
-mkdir -p "${HOME}/.zsh/completions"
-opc-ua-cli completions zsh > "${HOME}/.zsh/completions/_opc-ua-cli"
-```
-
-## Exit codes
-
-The CLI uses stable exit codes so automation can branch on failure category:
-
-- `0`: success
-- `1`: general error
-- `2`: config error
-- `3`: connection error
-- `4`: authentication/security error
-- `5`: node not found
-- `6`: bad OPC UA status code
-- `7`: write rejected
-
-## Alarm and event subscriptions
-
-The `alarms` command uses an OPC UA event subscription. By default it subscribes to `i=2253`, the standard Server object. Some servers expose alarm/event notifications on a different object, so pass that node with `--node` when needed.
-
-Selected event fields include:
-
-- `EventId`
-- `EventType`
-- `SourceNode`
-- `SourceName`
-- `Time`
-- `ReceiveTime`
-- `Message`
-- `Severity`
-- `ConditionName`
-- `ActiveState`
-- `AckedState`
-- `Retain`
-
-`--min-severity` accepts values from `0` to `1000`.
-
-## Security and authentication
-
-Anonymous, no security:
+Anonymous:
 
 ```yaml
 endpoint: opc.tcp://localhost:4840
@@ -283,7 +241,7 @@ password: secret
 timeout: 10s
 ```
 
-Signed and encrypted endpoint:
+Signed and encrypted:
 
 ```yaml
 endpoint: opc.tcp://localhost:4840
@@ -294,7 +252,7 @@ key: client-key.pem
 timeout: 10s
 ```
 
-Equivalent one-off command without YAML:
+One-off command equivalent:
 
 ```bash
 opc-ua-cli read \
@@ -306,36 +264,41 @@ opc-ua-cli read \
   --node 'ns=2;s=Demo.Static.Scalar.Int32'
 ```
 
-## Write types
+## Shell Completions
 
-`write` safety behavior:
-
-- The CLI prints endpoint, config/profile source, node, type, and value before write.
-- `--dry-run` prints the write plan and does not send a write request.
-- Without `--yes`, `write` asks for interactive confirmation.
-- In non-interactive/scripted mode, `write` fails unless `--yes` is provided.
-
-Supported scalar write types:
-
-- `string`
-- `bool`
-- `int8`, `int16`, `int32`, `int64`
-- `uint8`, `uint16`, `uint32`, `uint64`
-- `float32`, `float64`
-
-Aliases:
-
-- `int` maps to `int32`
-- `uint` maps to `uint32`
-- `float` maps to `float32`
-- `double` maps to `float64`
-- `byte` maps to `uint8`
-- `boolean` maps to `bool`
-
-## Development
+Generate:
 
 ```bash
-make fmt
-make test
-make build
+opc-ua-cli completions bash
+opc-ua-cli completions zsh
+```
+
+Install examples:
+
+```bash
+# bash
+opc-ua-cli completions bash > /etc/bash_completion.d/opc-ua-cli
+
+# zsh
+mkdir -p "${HOME}/.zsh/completions"
+opc-ua-cli completions zsh > "${HOME}/.zsh/completions/_opc-ua-cli"
+```
+
+## Exit Codes
+
+Stable exit codes for scripts:
+
+- `0`: success
+- `1`: general error
+- `2`: config error
+- `3`: connection error
+- `4`: authentication/security error
+- `5`: node not found
+- `6`: bad OPC UA status code
+- `7`: write rejected
+
+## Command Help
+
+```bash
+opc-ua-cli help
 ```
