@@ -87,5 +87,7 @@ Common flags:
   --cert       Client certificate file
   --key        Client private key file
   --timeout    Request timeout
-  --format     table, text, or json`)
+  --format     table, text, or json
+
+CLI flags override values loaded from --config.`)
 }
