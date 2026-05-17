@@ -45,6 +45,26 @@ func (a *App) initConfig(args []string) error {
 	return nil
 }
 
+func (a *App) validateConfig(args []string) error {
+	fs := a.newFlagSet("validate-config")
+	configPath := config.DefaultConfigPath
+	profile := ""
+	fs.StringVar(&configPath, "config", config.DefaultConfigPath, "YAML config file")
+	fs.StringVar(&profile, "profile", "", "config profile name")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	cfg, err := config.LoadClientConfigForProfile(configPath, profile)
+	if err != nil {
+		return err
+	}
+	if err := config.ValidateClientConfig(cfg); err != nil {
+		return err
+	}
+	fmt.Fprintln(a.out, "config validation: PASS")
+	return nil
+}
+
 func (a *App) newFlagSet(name string) *flag.FlagSet {
 	fs := flag.NewFlagSet(name, flag.ContinueOnError)
 	fs.SetOutput(a.err)

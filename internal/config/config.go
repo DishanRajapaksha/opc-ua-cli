@@ -91,6 +91,9 @@ func LoadClientConfigForProfile(path string, profile string) (ClientConfig, erro
 	if cfg.Endpoint == "" {
 		return cfg, fmt.Errorf("%w: endpoint cannot be empty", ErrConfig)
 	}
+	if err := ValidateClientConfig(cfg); err != nil {
+		return cfg, err
+	}
 
 	return cfg, nil
 }
@@ -128,16 +131,16 @@ type configFile struct {
 }
 
 type settings struct {
-	Endpoint   string `yaml:"endpoint"`
-	Policy     string `yaml:"policy"`
-	Mode       string `yaml:"mode"`
-	Username   string `yaml:"username"`
-	Password   string `yaml:"password"`
-	CertFile   string `yaml:"cert"`
-	KeyFile    string `yaml:"key"`
-	CertBase64 string `yaml:"cert_base64"`
-	KeyBase64  string `yaml:"key_base64"`
-	Timeout    string `yaml:"timeout"`
+	Endpoint   string            `yaml:"endpoint"`
+	Policy     string            `yaml:"policy"`
+	Mode       string            `yaml:"mode"`
+	Username   string            `yaml:"username"`
+	Password   string            `yaml:"password"`
+	CertFile   string            `yaml:"cert"`
+	KeyFile    string            `yaml:"key"`
+	CertBase64 string            `yaml:"cert_base64"`
+	KeyBase64  string            `yaml:"key_base64"`
+	Timeout    string            `yaml:"timeout"`
 	Namespaces map[string]string `yaml:"namespaces"`
 }
 

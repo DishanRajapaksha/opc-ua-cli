@@ -22,7 +22,7 @@ func (a *App) completions(args []string) error {
 	}
 }
 
-const completionSubcommands = "endpoints status namespaces browse read write monitor watch alarms test-connection init-config completions help"
+const completionSubcommands = "endpoints status namespaces browse read write monitor watch alarms test-connection validate-config init-config completions help"
 const completionCommonFlags = "--config --profile --endpoint --policy --mode --username --password --cert --key --timeout --format"
 
 const bashCompletionScript = `#!/usr/bin/env bash
@@ -57,7 +57,7 @@ _opc_ua_cli_completions() {
     endpoints|status)
       COMPREPLY=( $(compgen -W "--config --profile --endpoint --timeout --format" -- "${cur}") )
       ;;
-    namespaces|test-connection)
+    namespaces|test-connection|validate-config)
       COMPREPLY=( $(compgen -W "${common_flags}" -- "${cur}") )
       ;;
     init-config)
@@ -88,6 +88,7 @@ _opc_ua_cli_completions() {
     'watch:Poll node values'
     'alarms:Subscribe to alarms/events'
     'test-connection:Run connection diagnostics'
+    'validate-config:Validate local config'
     'init-config:Write starter YAML config'
     'completions:Generate shell completion scripts'
   )
@@ -131,7 +132,7 @@ _opc_ua_cli_completions() {
     endpoints|status)
       _arguments '--config[YAML config file]:config file:_files' '--profile[Config profile name]:profile:' '--endpoint[OPC UA endpoint URL]:endpoint:' '--timeout[Request timeout]:duration:' '--format[Output format]:format:(table json)'
       ;;
-    namespaces|test-connection)
+    namespaces|test-connection|validate-config)
       _arguments $common_flags
       ;;
     init-config)

@@ -195,6 +195,14 @@ opc-ua-cli test-connection --config site-a.yaml
 opc-ua-cli test-connection --profile site-a
 ```
 
+Validate config locally (no OPC UA connection):
+
+```bash
+opc-ua-cli validate-config
+opc-ua-cli validate-config --config site-a.yaml
+opc-ua-cli validate-config --profile site-a
+```
+
 Generate shell completions:
 
 ```bash
