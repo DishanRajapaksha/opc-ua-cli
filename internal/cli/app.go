@@ -62,12 +62,12 @@ func (a *App) printUsage() {
 	fmt.Fprintln(a.out, `opc-ua-cli is a small OPC UA command-line client.
 
 Usage:
-  opc-ua-cli endpoints --config config.yaml
-  opc-ua-cli browse --config config.yaml --node i=84 --depth 1
-  opc-ua-cli read --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32'
-  opc-ua-cli write --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42
-  opc-ua-cli monitor --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s
-  opc-ua-cli alarms --config config.yaml --node i=2253 --min-severity 500 --interval 1s
+  opc-ua-cli endpoints --profile local
+  opc-ua-cli browse --profile local --node i=84 --depth 1
+  opc-ua-cli read --profile site-a --node 'ns=2;s=Demo.Static.Scalar.Int32'
+  opc-ua-cli write --profile site-a --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42
+  opc-ua-cli monitor --profile site-a --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s
+  opc-ua-cli alarms --profile site-a --node i=2253 --min-severity 500 --interval 1s
 
 Commands:
   endpoints, status   List server endpoints and security options
@@ -78,7 +78,8 @@ Commands:
   alarms              Subscribe to OPC UA alarm and event notifications
 
 Common flags:
-  --config     YAML config file
+  --config     YAML config file, defaults to config.yaml
+  --profile    Config profile name; uses default_profile when omitted
   --endpoint   OPC UA endpoint URL
   --policy     Security policy
   --mode       Security mode
@@ -89,5 +90,5 @@ Common flags:
   --timeout    Request timeout
   --format     table, text, or json
 
-CLI flags override values loaded from --config.`)
+CLI flags override values loaded from --config and --profile.`)
 }
