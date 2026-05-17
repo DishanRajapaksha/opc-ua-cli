@@ -111,6 +111,18 @@ Monitor a node value:
 opc-ua-cli monitor --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s
 ```
 
+Watch nodes with polling (no OPC UA subscriptions):
+
+```bash
+opc-ua-cli watch --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s
+```
+
+Watch with duration and JSON lines:
+
+```bash
+opc-ua-cli watch --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --duration 1m --format jsonl
+```
+
 Monitor for a fixed time:
 
 ```bash

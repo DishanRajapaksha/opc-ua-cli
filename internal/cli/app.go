@@ -40,6 +40,8 @@ func (a *App) Run(args []string) int {
 		err = a.write(args[1:])
 	case "monitor":
 		err = a.monitor(args[1:])
+	case "watch":
+		err = a.watch(args[1:])
 	case "alarms":
 		err = a.alarms(args[1:])
 	case "test-connection":
@@ -69,6 +71,7 @@ Usage:
   opc-ua-cli read --profile site-a --node 'ns=2;s=Demo.Static.Scalar.Int32'
   opc-ua-cli write --profile site-a --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42
   opc-ua-cli monitor --profile site-a --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s
+  opc-ua-cli watch --profile site-a --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s
   opc-ua-cli alarms --profile site-a --node i=2253 --min-severity 500 --interval 1s
   opc-ua-cli test-connection --profile site-a
   opc-ua-cli init-config
@@ -81,6 +84,7 @@ Commands:
   read                Read a node value
   write               Write a scalar node value
   monitor             Subscribe to data changes
+  watch               Poll node values without subscriptions
   alarms              Subscribe to OPC UA alarm and event notifications
   test-connection     Run connection/auth/security diagnostics
   init-config         Write a starter YAML config file

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/DishanRajapaksha/opc-ua-cli/internal/config"
+	"github.com/DishanRajapaksha/opc-ua-cli/internal/domain"
 	"github.com/DishanRajapaksha/opc-ua-cli/internal/output"
 	"github.com/DishanRajapaksha/opc-ua-cli/internal/uaclient"
 )
@@ -296,6 +297,76 @@ func (a *App) monitor(args []string) error {
 	}
 
 	return nil
+}
+
+func (a *App) watch(args []string) error {
+	fs := a.newFlagSet("watch")
+	common := commonOptions{}
+	addCommonFlags(fs, &common)
+	var nodes stringList
+	interval := fs.Duration("interval", time.Second, "poll interval")
+	duration := fs.Duration("duration", 0, "stop after this duration; zero runs until interrupted")
+	fs.Var(&nodes, "node", "node id to watch; repeat for multiple nodes")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if err := common.applyConfig(fs); err != nil {
+		return err
+	}
+	if len(nodes) == 0 {
+		return errors.New("at least one --node is required")
+	}
+	if *interval <= 0 {
+		return errors.New("--interval must be greater than zero")
+	}
+
+	connectCtx, connectCancel := context.WithTimeout(context.Background(), common.client.Timeout)
+	defer connectCancel()
+
+	service := uaclient.NewService(common.client)
+	if err := service.Connect(connectCtx); err != nil {
+		return err
+	}
+	defer service.Close(context.Background())
+
+	runCtx := context.Background()
+	if *duration > 0 {
+		var cancel context.CancelFunc
+		runCtx, cancel = context.WithTimeout(runCtx, *duration)
+		defer cancel()
+	}
+
+	ticker := time.NewTicker(*interval)
+	defer ticker.Stop()
+	format := output.NormaliseFormat(common.format)
+
+	for {
+		for _, node := range nodes {
+			row, err := service.Read(runCtx, node)
+			if err != nil {
+				// Non-fatal read issues should not stop watch mode.
+				if errors.Is(err, uaclient.ErrConnection) || errors.Is(err, uaclient.ErrAuthSecurity) {
+					return err
+				}
+				fmt.Fprintf(a.err, "watch read failed for %s: %v\n", node, err)
+				continue
+			}
+			event := domain.DataChange{
+				NodeID:          row.NodeID,
+				Value:           row.Value,
+				SourceTimestamp: firstNonEmpty(row.SourceTimestamp, row.ServerTimestamp),
+			}
+			if err := a.renderDataChange(format, event); err != nil {
+				return err
+			}
+		}
+
+		select {
+		case <-runCtx.Done():
+			return nil
+		case <-ticker.C:
+		}
+	}
 }
 
 func (a *App) alarms(args []string) error {
