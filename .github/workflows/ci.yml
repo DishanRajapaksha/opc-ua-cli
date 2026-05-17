@@ -19,8 +19,8 @@ jobs:
           go-version-file: go.mod
           cache: false
 
-      - name: Download dependencies
-        run: go mod download
+      - name: Tidy dependencies
+        run: go mod tidy
 
       - name: Check formatting
         run: test -z "$(gofmt -l .)"
