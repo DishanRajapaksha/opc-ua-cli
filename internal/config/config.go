@@ -43,6 +43,10 @@ func DefaultClientConfig() ClientConfig {
 }
 
 func LoadClientConfig(path string) (ClientConfig, error) {
+	return LoadClientConfigForProfile(path, "")
+}
+
+func LoadClientConfigForProfile(path string, profile string) (ClientConfig, error) {
 	cfg := DefaultClientConfig()
 	if path == "" {
 		return cfg, nil
@@ -61,6 +65,59 @@ func LoadClientConfig(path string) (ClientConfig, error) {
 		return cfg, fmt.Errorf("parse config %q: %w", path, err)
 	}
 
+	if err := applySettings(&cfg, file.settings); err != nil {
+		return cfg, err
+	}
+
+	if len(file.Profiles) > 0 {
+		selectedProfile := profile
+		if selectedProfile == "" {
+			selectedProfile = file.DefaultProfile
+		}
+		if selectedProfile == "" {
+			return cfg, errors.New("config has profiles but no profile was selected and default_profile is empty")
+		}
+
+		settings, ok := file.Profiles[selectedProfile]
+		if !ok {
+			return cfg, fmt.Errorf("profile %q not found", selectedProfile)
+		}
+		if err := applySettings(&cfg, settings); err != nil {
+			return cfg, fmt.Errorf("profile %q: %w", selectedProfile, err)
+		}
+	}
+
+	if cfg.Endpoint == "" {
+		return cfg, errors.New("endpoint cannot be empty")
+	}
+
+	return cfg, nil
+}
+
+func (c ClientConfig) UsesSecurity() bool {
+	return c.Username != "" || c.Policy != "None" || c.Mode != "None" || c.CertFile != "" || c.KeyFile != "" || len(c.CertDER) > 0 || c.PrivateKey != nil
+}
+
+type configFile struct {
+	settings       `yaml:",inline"`
+	DefaultProfile string              `yaml:"default_profile"`
+	Profiles       map[string]settings `yaml:"profiles"`
+}
+
+type settings struct {
+	Endpoint   string `yaml:"endpoint"`
+	Policy     string `yaml:"policy"`
+	Mode       string `yaml:"mode"`
+	Username   string `yaml:"username"`
+	Password   string `yaml:"password"`
+	CertFile   string `yaml:"cert"`
+	KeyFile    string `yaml:"key"`
+	CertBase64 string `yaml:"cert_base64"`
+	KeyBase64  string `yaml:"key_base64"`
+	Timeout    string `yaml:"timeout"`
+}
+
+func applySettings(cfg *ClientConfig, file settings) error {
 	if file.Endpoint != "" {
 		cfg.Endpoint = file.Endpoint
 	}
@@ -85,47 +142,26 @@ func LoadClientConfig(path string) (ClientConfig, error) {
 	if file.CertBase64 != "" {
 		certDER, err := decodeCertificate(file.CertBase64)
 		if err != nil {
-			return cfg, fmt.Errorf("parse cert_base64: %w", err)
+			return fmt.Errorf("parse cert_base64: %w", err)
 		}
 		cfg.CertDER = certDER
 	}
 	if file.KeyBase64 != "" {
 		privateKey, err := decodePrivateKey(file.KeyBase64)
 		if err != nil {
-			return cfg, fmt.Errorf("parse key_base64: %w", err)
+			return fmt.Errorf("parse key_base64: %w", err)
 		}
 		cfg.PrivateKey = privateKey
 	}
 	if file.Timeout != "" {
 		timeout, err := time.ParseDuration(file.Timeout)
 		if err != nil {
-			return cfg, fmt.Errorf("parse timeout %q: %w", file.Timeout, err)
+			return fmt.Errorf("parse timeout %q: %w", file.Timeout, err)
 		}
 		cfg.Timeout = timeout
 	}
 
-	if cfg.Endpoint == "" {
-		return cfg, errors.New("endpoint cannot be empty")
-	}
-
-	return cfg, nil
-}
-
-func (c ClientConfig) UsesSecurity() bool {
-	return c.Username != "" || c.Policy != "None" || c.Mode != "None" || c.CertFile != "" || c.KeyFile != "" || len(c.CertDER) > 0 || c.PrivateKey != nil
-}
-
-type configFile struct {
-	Endpoint   string `yaml:"endpoint"`
-	Policy     string `yaml:"policy"`
-	Mode       string `yaml:"mode"`
-	Username   string `yaml:"username"`
-	Password   string `yaml:"password"`
-	CertFile   string `yaml:"cert"`
-	KeyFile    string `yaml:"key"`
-	CertBase64 string `yaml:"cert_base64"`
-	KeyBase64  string `yaml:"key_base64"`
-	Timeout    string `yaml:"timeout"`
+	return nil
 }
 
 func decodeCertificate(value string) ([]byte, error) {
