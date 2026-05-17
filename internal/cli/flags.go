@@ -15,8 +15,9 @@ type commonOptions struct {
 func addCommonFlags(fs *flag.FlagSet, opts *commonOptions) {
 	cfg := config.DefaultClientConfig()
 	opts.client = cfg
+	opts.configPath = config.DefaultConfigPath
 
-	fs.StringVar(&opts.configPath, "config", "", "YAML config file")
+	fs.StringVar(&opts.configPath, "config", config.DefaultConfigPath, "YAML config file")
 	fs.StringVar(&opts.client.Endpoint, "endpoint", cfg.Endpoint, "OPC UA endpoint URL")
 	fs.StringVar(&opts.client.Policy, "policy", cfg.Policy, "security policy")
 	fs.StringVar(&opts.client.Mode, "mode", cfg.Mode, "security mode")
