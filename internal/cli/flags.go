@@ -7,14 +7,16 @@ import (
 )
 
 type commonOptions struct {
-	client config.ClientConfig
-	format string
+	client     config.ClientConfig
+	format     string
+	configPath string
 }
 
 func addCommonFlags(fs *flag.FlagSet, opts *commonOptions) {
 	cfg := config.DefaultClientConfig()
 	opts.client = cfg
 
+	fs.StringVar(&opts.configPath, "config", "", "YAML config file")
 	fs.StringVar(&opts.client.Endpoint, "endpoint", cfg.Endpoint, "OPC UA endpoint URL")
 	fs.StringVar(&opts.client.Policy, "policy", cfg.Policy, "security policy")
 	fs.StringVar(&opts.client.Mode, "mode", cfg.Mode, "security mode")
@@ -24,4 +26,50 @@ func addCommonFlags(fs *flag.FlagSet, opts *commonOptions) {
 	fs.StringVar(&opts.client.KeyFile, "key", cfg.KeyFile, "client private key file")
 	fs.DurationVar(&opts.client.Timeout, "timeout", cfg.Timeout, "request timeout")
 	fs.StringVar(&opts.format, "format", "table", "output format: table, text, json")
+}
+
+func (opts *commonOptions) applyConfig(fs *flag.FlagSet) error {
+	fileCfg, err := config.LoadClientConfig(opts.configPath)
+	if err != nil {
+		return err
+	}
+
+	cliCfg := opts.client
+	opts.client = fileCfg
+	visited := visitedFlags(fs)
+
+	if visited["endpoint"] {
+		opts.client.Endpoint = cliCfg.Endpoint
+	}
+	if visited["policy"] {
+		opts.client.Policy = cliCfg.Policy
+	}
+	if visited["mode"] {
+		opts.client.Mode = cliCfg.Mode
+	}
+	if visited["username"] {
+		opts.client.Username = cliCfg.Username
+	}
+	if visited["password"] {
+		opts.client.Password = cliCfg.Password
+	}
+	if visited["cert"] {
+		opts.client.CertFile = cliCfg.CertFile
+	}
+	if visited["key"] {
+		opts.client.KeyFile = cliCfg.KeyFile
+	}
+	if visited["timeout"] {
+		opts.client.Timeout = cliCfg.Timeout
+	}
+
+	return nil
+}
+
+func visitedFlags(fs *flag.FlagSet) map[string]bool {
+	visited := map[string]bool{}
+	fs.Visit(func(f *flag.Flag) {
+		visited[f.Name] = true
+	})
+	return visited
 }
