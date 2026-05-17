@@ -37,10 +37,14 @@ func (s *Service) Connect(ctx context.Context) error {
 		auth,
 	}
 
-	if s.cfg.CertFile != "" {
+	if len(s.cfg.CertDER) > 0 {
+		opts = append(opts, opcua.Certificate(s.cfg.CertDER))
+	} else if s.cfg.CertFile != "" {
 		opts = append(opts, opcua.CertificateFile(s.cfg.CertFile))
 	}
-	if s.cfg.KeyFile != "" {
+	if s.cfg.PrivateKey != nil {
+		opts = append(opts, opcua.PrivateKey(s.cfg.PrivateKey))
+	} else if s.cfg.KeyFile != "" {
 		opts = append(opts, opcua.PrivateKeyFile(s.cfg.KeyFile))
 	}
 
@@ -87,5 +91,7 @@ func (s *Service) usesEndpointSelection() bool {
 		!strings.EqualFold(s.cfg.Policy, "None") ||
 		!strings.EqualFold(s.cfg.Mode, "None") ||
 		s.cfg.CertFile != "" ||
-		s.cfg.KeyFile != ""
+		s.cfg.KeyFile != "" ||
+		len(s.cfg.CertDER) > 0 ||
+		s.cfg.PrivateKey != nil
 }
