@@ -1,0 +1,195 @@
+package cli
+
+import (
+	"context"
+	"errors"
+	"flag"
+	"fmt"
+	"os"
+	"os/signal"
+	"time"
+
+	"github.com/DishanRajapaksha/opc-ua-cli/internal/config"
+	"github.com/DishanRajapaksha/opc-ua-cli/internal/output"
+	"github.com/DishanRajapaksha/opc-ua-cli/internal/uaclient"
+)
+
+func (a *App) newFlagSet(name string) *flag.FlagSet {
+	fs := flag.NewFlagSet(name, flag.ContinueOnError)
+	fs.SetOutput(a.err)
+	return fs
+}
+
+func (a *App) endpoints(args []string) error {
+	fs := a.newFlagSet("endpoints")
+	cfg := config.DefaultClientConfig()
+	format := "table"
+	fs.StringVar(&cfg.Endpoint, "endpoint", cfg.Endpoint, "OPC UA endpoint URL")
+	fs.DurationVar(&cfg.Timeout, "timeout", cfg.Timeout, "request timeout")
+	fs.StringVar(&format, "format", format, "output format: table, json")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
+	defer cancel()
+
+	rows, err := uaclient.ListEndpoints(ctx, cfg.Endpoint)
+	if err != nil {
+		return err
+	}
+	return a.renderEndpoints(format, rows)
+}
+
+func (a *App) browse(args []string) error {
+	fs := a.newFlagSet("browse")
+	common := commonOptions{}
+	addCommonFlags(fs, &common)
+	node := fs.String("node", "i=84", "root node id")
+	depth := fs.Int("depth", 1, "recursive browse depth")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *depth < 0 {
+		return errors.New("--depth must be zero or greater")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), common.client.Timeout)
+	defer cancel()
+
+	service := uaclient.NewService(common.client)
+	if err := service.Connect(ctx); err != nil {
+		return err
+	}
+	defer service.Close(context.Background())
+
+	rows, err := service.Browse(ctx, *node, *depth)
+	if err != nil {
+		return err
+	}
+	return a.renderNodes(common.format, rows)
+}
+
+func (a *App) read(args []string) error {
+	fs := a.newFlagSet("read")
+	common := commonOptions{}
+	addCommonFlags(fs, &common)
+	node := fs.String("node", "", "node id to read")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *node == "" {
+		return errors.New("--node is required")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), common.client.Timeout)
+	defer cancel()
+
+	service := uaclient.NewService(common.client)
+	if err := service.Connect(ctx); err != nil {
+		return err
+	}
+	defer service.Close(context.Background())
+
+	row, err := service.Read(ctx, *node)
+	if err != nil {
+		return err
+	}
+	return a.renderRead(common.format, row)
+}
+
+func (a *App) write(args []string) error {
+	fs := a.newFlagSet("write")
+	common := commonOptions{}
+	addCommonFlags(fs, &common)
+	node := fs.String("node", "", "node id to write")
+	value := fs.String("value", "", "value to write")
+	valueType := fs.String("type", "string", "scalar value type")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *node == "" {
+		return errors.New("--node is required")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), common.client.Timeout)
+	defer cancel()
+
+	service := uaclient.NewService(common.client)
+	if err := service.Connect(ctx); err != nil {
+		return err
+	}
+	defer service.Close(context.Background())
+
+	row, err := service.Write(ctx, *node, *valueType, *value)
+	if err != nil {
+		return err
+	}
+	return a.renderWrite(common.format, row)
+}
+
+func (a *App) monitor(args []string) error {
+	fs := a.newFlagSet("monitor")
+	common := commonOptions{}
+	addCommonFlags(fs, &common)
+	var nodes stringList
+	interval := fs.Duration("interval", time.Second, "subscription interval")
+	duration := fs.Duration("duration", 0, "stop after this duration; zero runs until interrupted")
+	fs.Var(&nodes, "node", "node id to monitor; repeat for multiple nodes")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if len(nodes) == 0 {
+		return errors.New("at least one --node is required")
+	}
+
+	connectCtx, connectCancel := context.WithTimeout(context.Background(), common.client.Timeout)
+	defer connectCancel()
+
+	service := uaclient.NewService(common.client)
+	if err := service.Connect(connectCtx); err != nil {
+		return err
+	}
+	defer service.Close(context.Background())
+
+	runCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+	if *duration > 0 {
+		var cancel context.CancelFunc
+		runCtx, cancel = context.WithTimeout(runCtx, *duration)
+		defer cancel()
+	}
+
+	subscription, err := service.Monitor(runCtx, nodes, *interval)
+	if err != nil {
+		return err
+	}
+	defer subscription.Close()
+
+	events := subscription.Events
+	errorsCh := subscription.Errors
+	format := output.NormaliseFormat(common.format)
+
+	for events != nil || errorsCh != nil {
+		select {
+		case event, ok := <-events:
+			if !ok {
+				events = nil
+				continue
+			}
+			if err := a.renderDataChange(format, event); err != nil {
+				return err
+			}
+		case err, ok := <-errorsCh:
+			if !ok {
+				errorsCh = nil
+				continue
+			}
+			fmt.Fprintln(a.err, err)
+		case <-runCtx.Done():
+			return nil
+		}
+	}
+
+	return nil
+}
