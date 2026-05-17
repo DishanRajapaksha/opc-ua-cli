@@ -1,4 +1,4 @@
-# opc-ua-cli
+# OPC UA CLI
 
 A small, script-friendly OPC UA command-line client written in Go.
 
@@ -13,7 +13,7 @@ A small, script-friendly OPC UA command-line client written in Go.
 - Output as tables, plain text, or JSON.
 - Support anonymous and username/password authentication.
 - Support OPC UA security policy/mode selection with client certificate and key files.
-- Load repeated connection settings from a small YAML config file.
+- Load repeated connection settings from a YAML config file.
 
 ## Install
 
@@ -134,6 +134,19 @@ You can still skip the config file and pass connection flags directly:
 ```bash
 opc-ua-cli read --endpoint opc.tcp://localhost:4840 --node 'ns=2;s=Demo.Static.Scalar.Int32'
 ```
+
+## Exit codes
+
+The CLI uses stable exit codes so automation can branch on failure category:
+
+- `0`: success
+- `1`: general error
+- `2`: config error
+- `3`: connection error
+- `4`: authentication/security error
+- `5`: node not found
+- `6`: bad OPC UA status code
+- `7`: write rejected
 
 ## Alarm and event subscriptions
 

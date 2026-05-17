@@ -12,7 +12,7 @@ import (
 func (s *Service) Read(ctx context.Context, node string) (domain.ReadResult, error) {
 	nodeID, err := ua.ParseNodeID(node)
 	if err != nil {
-		return domain.ReadResult{}, err
+		return domain.ReadResult{}, fmt.Errorf("%w: invalid node id", ErrValidation)
 	}
 
 	response, err := s.client.Read(ctx, &ua.ReadRequest{
@@ -23,15 +23,18 @@ func (s *Service) Read(ctx context.Context, node string) (domain.ReadResult, err
 		},
 	})
 	if err != nil {
-		return domain.ReadResult{}, err
+		return domain.ReadResult{}, fmt.Errorf("%w: read request failed", ErrConnection)
 	}
 	if len(response.Results) == 0 {
-		return domain.ReadResult{}, fmt.Errorf("read returned no result")
+		return domain.ReadResult{}, fmt.Errorf("%w: read returned no result", ErrBadStatusCode)
 	}
 
 	result := response.Results[0]
 	if result.Status != ua.StatusOK {
-		return domain.ReadResult{}, fmt.Errorf("read failed: %s", result.Status)
+		if result.Status == ua.StatusBadNodeIDUnknown {
+			return domain.ReadResult{}, fmt.Errorf("%w: %s", ErrNodeNotFound, node)
+		}
+		return domain.ReadResult{}, fmt.Errorf("%w: %s", ErrBadStatusCode, result.Status)
 	}
 
 	value := interface{}(nil)

@@ -57,12 +57,12 @@ func LoadClientConfigForProfile(path string, profile string) (ClientConfig, erro
 		if errors.Is(err, os.ErrNotExist) && path == DefaultConfigPath {
 			return cfg, nil
 		}
-		return cfg, fmt.Errorf("read config %q: %w", path, err)
+		return cfg, fmt.Errorf("%w: read config %q: %v", ErrConfig, path, err)
 	}
 
 	var file configFile
 	if err := yaml.Unmarshal(contents, &file); err != nil {
-		return cfg, fmt.Errorf("parse config %q: %w", path, err)
+		return cfg, fmt.Errorf("%w: parse config %q: %v", ErrConfig, path, err)
 	}
 
 	if err := applySettings(&cfg, file.settings); err != nil {
@@ -75,20 +75,20 @@ func LoadClientConfigForProfile(path string, profile string) (ClientConfig, erro
 			selectedProfile = file.DefaultProfile
 		}
 		if selectedProfile == "" {
-			return cfg, errors.New("config has profiles but no profile was selected and default_profile is empty")
+			return cfg, fmt.Errorf("%w: config has profiles but no profile was selected and default_profile is empty", ErrConfig)
 		}
 
 		settings, ok := file.Profiles[selectedProfile]
 		if !ok {
-			return cfg, fmt.Errorf("profile %q not found", selectedProfile)
+			return cfg, fmt.Errorf("%w: profile %q not found", ErrConfig, selectedProfile)
 		}
 		if err := applySettings(&cfg, settings); err != nil {
-			return cfg, fmt.Errorf("profile %q: %w", selectedProfile, err)
+			return cfg, fmt.Errorf("%w: profile %q: %v", ErrConfig, selectedProfile, err)
 		}
 	}
 
 	if cfg.Endpoint == "" {
-		return cfg, errors.New("endpoint cannot be empty")
+		return cfg, fmt.Errorf("%w: endpoint cannot be empty", ErrConfig)
 	}
 
 	return cfg, nil
@@ -164,21 +164,21 @@ func applySettings(cfg *ClientConfig, file settings) error {
 	if file.CertBase64 != "" {
 		certDER, err := decodeCertificate(file.CertBase64)
 		if err != nil {
-			return fmt.Errorf("parse cert_base64: %w", err)
+			return fmt.Errorf("%w: parse cert_base64: %v", ErrConfig, err)
 		}
 		cfg.CertDER = certDER
 	}
 	if file.KeyBase64 != "" {
 		privateKey, err := decodePrivateKey(file.KeyBase64)
 		if err != nil {
-			return fmt.Errorf("parse key_base64: %w", err)
+			return fmt.Errorf("%w: parse key_base64: %v", ErrConfig, err)
 		}
 		cfg.PrivateKey = privateKey
 	}
 	if file.Timeout != "" {
 		timeout, err := time.ParseDuration(file.Timeout)
 		if err != nil {
-			return fmt.Errorf("parse timeout %q: %w", file.Timeout, err)
+			return fmt.Errorf("%w: parse timeout %q: %v", ErrConfig, file.Timeout, err)
 		}
 		cfg.Timeout = timeout
 	}

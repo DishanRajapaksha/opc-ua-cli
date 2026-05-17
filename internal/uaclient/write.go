@@ -13,17 +13,17 @@ import (
 func (s *Service) Write(ctx context.Context, node string, valueType string, rawValue string) (domain.WriteResult, error) {
 	nodeID, err := ua.ParseNodeID(node)
 	if err != nil {
-		return domain.WriteResult{}, err
+		return domain.WriteResult{}, fmt.Errorf("%w: invalid node id", ErrValidation)
 	}
 
 	parsed, err := parseScalar(valueType, rawValue)
 	if err != nil {
-		return domain.WriteResult{}, err
+		return domain.WriteResult{}, fmt.Errorf("%w: invalid value for type %q", ErrValidation, valueType)
 	}
 
 	variant, err := ua.NewVariant(parsed)
 	if err != nil {
-		return domain.WriteResult{}, err
+		return domain.WriteResult{}, fmt.Errorf("%w: invalid OPC UA value", ErrValidation)
 	}
 
 	response, err := s.client.Write(ctx, &ua.WriteRequest{
@@ -39,13 +39,16 @@ func (s *Service) Write(ctx context.Context, node string, valueType string, rawV
 		},
 	})
 	if err != nil {
-		return domain.WriteResult{}, err
+		return domain.WriteResult{}, fmt.Errorf("%w: write request failed", ErrConnection)
 	}
 	if len(response.Results) == 0 {
-		return domain.WriteResult{}, fmt.Errorf("write returned no result")
+		return domain.WriteResult{}, fmt.Errorf("%w: write returned no result", ErrWriteRejected)
 	}
 	if response.Results[0] != ua.StatusOK {
-		return domain.WriteResult{}, fmt.Errorf("write failed: %s", response.Results[0])
+		if response.Results[0] == ua.StatusBadNodeIDUnknown {
+			return domain.WriteResult{}, fmt.Errorf("%w: %s", ErrNodeNotFound, node)
+		}
+		return domain.WriteResult{}, fmt.Errorf("%w: %s", ErrWriteRejected, response.Results[0])
 	}
 
 	return domain.WriteResult{NodeID: node, Status: fmt.Sprint(response.Results[0])}, nil

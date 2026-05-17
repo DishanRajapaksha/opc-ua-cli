@@ -2,6 +2,7 @@ package uaclient
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/DishanRajapaksha/opc-ua-cli/internal/config"
@@ -52,12 +53,12 @@ func (s *Service) Connect(ctx context.Context) error {
 	if s.usesEndpointSelection() {
 		endpoints, err := opcua.GetEndpoints(ctx, s.cfg.Endpoint)
 		if err != nil {
-			return err
+			return fmt.Errorf("%w: cannot fetch server endpoints", ErrConnection)
 		}
 
 		selected, err := opcua.SelectEndpoint(endpoints, s.cfg.Policy, ua.MessageSecurityModeFromString(s.cfg.Mode))
 		if err != nil {
-			return err
+			return fmt.Errorf("%w: no matching endpoint for requested security settings", ErrAuthSecurity)
 		}
 
 		endpoint = selected.EndpointURL
@@ -66,10 +67,13 @@ func (s *Service) Connect(ctx context.Context) error {
 
 	client, err := opcua.NewClient(endpoint, opts...)
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: invalid client configuration", ErrConnection)
 	}
 	if err := client.Connect(ctx); err != nil {
-		return err
+		if s.cfg.UsesSecurity() {
+			return fmt.Errorf("%w: failed to establish secure session", ErrAuthSecurity)
+		}
+		return fmt.Errorf("%w: failed to connect to endpoint", ErrConnection)
 	}
 
 	s.client = client

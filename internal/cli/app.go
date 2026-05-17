@@ -6,8 +6,6 @@ import (
 	"os"
 )
 
-const exitFailure = 1
-
 type App struct {
 	out io.Writer
 	err io.Writer
@@ -49,15 +47,15 @@ func (a *App) Run(args []string) int {
 	default:
 		a.printUsage()
 		fmt.Fprintf(a.err, "unknown command %q\n", args[0])
-		return exitFailure
+		return exitGeneralError
 	}
 
 	if err != nil {
 		fmt.Fprintln(a.err, err)
-		return exitFailure
+		return mapExitCode(err)
 	}
 
-	return 0
+	return exitSuccess
 }
 
 func (a *App) printUsage() {
