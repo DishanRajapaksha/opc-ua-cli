@@ -136,6 +136,36 @@ func (a *App) namespaces(args []string) error {
 	return output.WriteTable(a.out, []string{"Index", "URI"}, rows)
 }
 
+func (a *App) attributes(args []string) error {
+	fs := a.newFlagSet("attributes")
+	common := commonOptions{}
+	addCommonFlags(fs, &common)
+	node := fs.String("node", "", "node id to inspect")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if err := common.applyConfig(fs); err != nil {
+		return err
+	}
+	if *node == "" {
+		return errors.New("--node is required")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), common.client.Timeout)
+	defer cancel()
+	service := uaclient.NewService(common.client)
+	if err := service.Connect(ctx); err != nil {
+		return err
+	}
+	defer service.Close(context.Background())
+
+	row, err := service.Attributes(ctx, *node)
+	if err != nil {
+		return err
+	}
+	return a.renderAttributes(common.format, row)
+}
+
 func (a *App) browse(args []string) error {
 	fs := a.newFlagSet("browse")
 	common := commonOptions{}

@@ -50,6 +50,29 @@ func (a *App) renderWrite(format string, row domain.WriteResult) error {
 	return output.WriteTable(a.out, []string{"NodeID", "Status"}, [][]string{{row.NodeID, row.Status}})
 }
 
+func (a *App) renderAttributes(format string, row domain.NodeAttributesResult) error {
+	switch output.NormaliseFormat(format) {
+	case output.FormatJSON:
+		return output.WriteJSON(a.out, row)
+	case output.FormatText:
+		if _, err := fmt.Fprintf(a.out, "NodeID: %s\n", row.NodeID); err != nil {
+			return err
+		}
+		for _, attr := range row.Attributes {
+			if _, err := fmt.Fprintf(a.out, "%s: %v (%s)\n", attr.Name, attr.Value, attr.Status); err != nil {
+				return err
+			}
+		}
+		return nil
+	default:
+		tableRows := make([][]string, 0, len(row.Attributes))
+		for _, attr := range row.Attributes {
+			tableRows = append(tableRows, []string{row.NodeID, attr.Name, fmt.Sprint(attr.Value), attr.Status})
+		}
+		return output.WriteTable(a.out, []string{"NodeID", "Attribute", "Value", "Status"}, tableRows)
+	}
+}
+
 func renderReadMany(a *App, format string, rows []domain.ReadResult) error {
 	switch output.NormaliseFormat(format) {
 	case output.FormatJSON:

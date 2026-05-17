@@ -22,7 +22,7 @@ func (a *App) completions(args []string) error {
 	}
 }
 
-const completionSubcommands = "endpoints status namespaces browse read write monitor watch alarms test-connection validate-config init-config completions help"
+const completionSubcommands = "endpoints status namespaces browse attributes read write monitor watch alarms test-connection validate-config init-config completions help"
 const completionCommonFlags = "--config --profile --endpoint --policy --mode --username --password --cert --key --timeout --format"
 
 const bashCompletionScript = `#!/usr/bin/env bash
@@ -47,6 +47,9 @@ _opc_ua_cli_completions() {
       ;;
     browse)
       COMPREPLY=( $(compgen -W "${common_flags} --node --depth" -- "${cur}") )
+      ;;
+    attributes)
+      COMPREPLY=( $(compgen -W "${common_flags} --node" -- "${cur}") )
       ;;
     monitor|watch)
       COMPREPLY=( $(compgen -W "${common_flags} --node --interval --duration" -- "${cur}") )
@@ -82,6 +85,7 @@ _opc_ua_cli_completions() {
     'status:List server endpoints'
     'namespaces:List namespace indexes and URIs'
     'browse:Browse child nodes'
+    'attributes:Inspect node metadata attributes'
     'read:Read node values'
     'write:Write node values'
     'monitor:Subscribe to data changes'
@@ -122,6 +126,9 @@ _opc_ua_cli_completions() {
       ;;
     browse)
       _arguments $common_flags '--node[root node id]:node:' '--depth[browse depth]:depth:'
+      ;;
+    attributes)
+      _arguments $common_flags '--node[node id]:node:'
       ;;
     monitor|watch)
       _arguments $common_flags '--node[node id]:node:' '--interval[poll/subscription interval]:interval:' '--duration[stop after duration]:duration:'

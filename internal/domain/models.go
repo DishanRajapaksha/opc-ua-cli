@@ -54,3 +54,16 @@ type AlarmEvent struct {
 	Severity    uint16                 `json:"severity,omitempty"`
 	Fields      map[string]interface{} `json:"fields,omitempty"`
 }
+
+// NodeAttribute describes one OPC UA node attribute read result.
+type NodeAttribute struct {
+	Name   string      `json:"name"`
+	Value  interface{} `json:"value,omitempty"`
+	Status string      `json:"status"`
+}
+
+// NodeAttributesResult contains common node metadata attributes.
+type NodeAttributesResult struct {
+	NodeID     string          `json:"nodeId"`
+	Attributes []NodeAttribute `json:"attributes"`
+}

@@ -91,6 +91,12 @@ Browse nodes:
 opc-ua-cli browse --config config.yaml --node i=84 --depth 1
 ```
 
+Inspect node attributes:
+
+```bash
+opc-ua-cli attributes --config config.yaml --node 'ns=2;s=Demo.Value'
+```
+
 Read a node:
 
 ```bash
