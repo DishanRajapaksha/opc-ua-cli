@@ -24,13 +24,22 @@ func (s Subscription) Close() {
 }
 
 func (s *Service) Monitor(ctx context.Context, nodes []string, interval time.Duration) (Subscription, error) {
+	resolved := make([]string, 0, len(nodes))
+	for _, node := range nodes {
+		nodeID, _, err := s.ResolveNodeID(ctx, node)
+		if err != nil {
+			return Subscription{}, err
+		}
+		resolved = append(resolved, nodeID.String())
+	}
+
 	nodeMonitor, err := monitor.NewNodeMonitor(s.client)
 	if err != nil {
 		return Subscription{}, err
 	}
 
 	rawChanges := make(chan *monitor.DataChangeMessage, 32)
-	subscription, err := nodeMonitor.ChanSubscribe(ctx, &opcua.SubscriptionParameters{Interval: interval}, rawChanges, nodes...)
+	subscription, err := nodeMonitor.ChanSubscribe(ctx, &opcua.SubscriptionParameters{Interval: interval}, rawChanges, resolved...)
 	if err != nil {
 		return Subscription{}, err
 	}

@@ -11,9 +11,9 @@ import (
 )
 
 func (s *Service) Write(ctx context.Context, node string, valueType string, rawValue string) (domain.WriteResult, error) {
-	nodeID, err := ua.ParseNodeID(node)
+	nodeID, resolvedNode, err := s.ResolveNodeID(ctx, node)
 	if err != nil {
-		return domain.WriteResult{}, fmt.Errorf("%w: invalid node id", ErrValidation)
+		return domain.WriteResult{}, err
 	}
 
 	parsed, err := parseScalar(valueType, rawValue)
@@ -46,12 +46,12 @@ func (s *Service) Write(ctx context.Context, node string, valueType string, rawV
 	}
 	if response.Results[0] != ua.StatusOK {
 		if response.Results[0] == ua.StatusBadNodeIDUnknown {
-			return domain.WriteResult{}, fmt.Errorf("%w: %s", ErrNodeNotFound, node)
+			return domain.WriteResult{}, fmt.Errorf("%w: %s", ErrNodeNotFound, resolvedNode)
 		}
 		return domain.WriteResult{}, fmt.Errorf("%w: %s", ErrWriteRejected, response.Results[0])
 	}
 
-	return domain.WriteResult{NodeID: node, Status: fmt.Sprint(response.Results[0])}, nil
+	return domain.WriteResult{NodeID: resolvedNode, Status: fmt.Sprint(response.Results[0])}, nil
 }
 
 func parseScalar(valueType string, raw string) (interface{}, error) {

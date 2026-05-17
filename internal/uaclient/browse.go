@@ -11,7 +11,7 @@ import (
 )
 
 func (s *Service) Browse(ctx context.Context, root string, maxDepth int) ([]domain.Node, error) {
-	nodeID, err := ua.ParseNodeID(root)
+	nodeID, _, err := s.ResolveNodeID(ctx, root)
 	if err != nil {
 		return nil, err
 	}

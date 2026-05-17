@@ -10,9 +10,9 @@ import (
 )
 
 func (s *Service) Read(ctx context.Context, node string) (domain.ReadResult, error) {
-	nodeID, err := ua.ParseNodeID(node)
+	nodeID, resolvedNode, err := s.ResolveNodeID(ctx, node)
 	if err != nil {
-		return domain.ReadResult{}, fmt.Errorf("%w: invalid node id", ErrValidation)
+		return domain.ReadResult{}, err
 	}
 
 	response, err := s.client.Read(ctx, &ua.ReadRequest{
@@ -43,7 +43,7 @@ func (s *Service) Read(ctx context.Context, node string) (domain.ReadResult, err
 	}
 
 	return domain.ReadResult{
-		NodeID:          node,
+		NodeID:          resolvedNode,
 		Value:           value,
 		Status:          fmt.Sprint(result.Status),
 		SourceTimestamp: formatTimestamp(result.SourceTimestamp),

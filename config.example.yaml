@@ -10,3 +10,7 @@ timeout: 10s
 # Optional client certificate settings for secured endpoints.
 # cert: client-cert.pem
 # key: client-key.pem
+
+# Optional namespace aliases for nsu=alias;... NodeIDs.
+# namespaces:
+#   plant: urn:plant:model

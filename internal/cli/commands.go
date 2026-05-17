@@ -88,6 +88,34 @@ func (a *App) endpoints(args []string) error {
 	return a.renderEndpoints(format, rows)
 }
 
+func (a *App) namespaces(args []string) error {
+	fs := a.newFlagSet("namespaces")
+	common := commonOptions{}
+	addCommonFlags(fs, &common)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if err := common.applyConfig(fs); err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), common.client.Timeout)
+	defer cancel()
+	service := uaclient.NewService(common.client)
+	if err := service.Connect(ctx); err != nil {
+		return err
+	}
+	defer service.Close(context.Background())
+	uris, err := service.NamespaceArray(ctx)
+	if err != nil {
+		return err
+	}
+	rows := make([][]string, 0, len(uris))
+	for i, uri := range uris {
+		rows = append(rows, []string{fmt.Sprint(i), uri})
+	}
+	return output.WriteTable(a.out, []string{"Index", "URI"}, rows)
+}
+
 func (a *App) browse(args []string) error {
 	fs := a.newFlagSet("browse")
 	common := commonOptions{}

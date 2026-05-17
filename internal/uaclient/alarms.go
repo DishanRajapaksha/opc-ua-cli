@@ -26,7 +26,7 @@ func (s AlarmSubscription) Close() {
 }
 
 func (s *Service) SubscribeAlarms(ctx context.Context, node string, interval time.Duration, minSeverity uint16) (AlarmSubscription, error) {
-	nodeID, err := ua.ParseNodeID(node)
+	nodeID, resolvedNode, err := s.ResolveNodeID(ctx, node)
 	if err != nil {
 		return AlarmSubscription{}, err
 	}
@@ -84,7 +84,7 @@ func (s *Service) SubscribeAlarms(ctx context.Context, node string, interval tim
 				}
 
 				for _, item := range list.Events {
-					event := alarmEventFromFields(node, fieldNames, item.EventFields)
+					event := alarmEventFromFields(resolvedNode, fieldNames, item.EventFields)
 					select {
 					case events <- event:
 					case <-ctx.Done():

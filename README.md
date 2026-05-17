@@ -51,6 +51,10 @@ timeout: 10s
 # Optional client certificate settings for secured endpoints.
 # cert: client-cert.pem
 # key: client-key.pem
+
+# Optional namespace aliases for nsu=alias;... node IDs.
+# namespaces:
+#   plant: urn:plant:model
 ```
 
 There is also a `config.example.yaml` in the repo.
@@ -75,6 +79,12 @@ List endpoints:
 opc-ua-cli endpoints --config config.yaml
 ```
 
+List namespace indexes and URIs:
+
+```bash
+opc-ua-cli namespaces --config config.yaml
+```
+
 Browse nodes:
 
 ```bash
@@ -85,6 +95,12 @@ Read a node:
 
 ```bash
 opc-ua-cli read --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32'
+```
+
+Read using namespace URI/alias form:
+
+```bash
+opc-ua-cli read --config config.yaml --node 'nsu=plant;s=Inverter01.ActivePower'
 ```
 
 Read as JSON:

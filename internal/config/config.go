@@ -31,6 +31,7 @@ type ClientConfig struct {
 	CertDER    []byte
 	PrivateKey *rsa.PrivateKey
 	Timeout    time.Duration
+	Namespaces map[string]string
 }
 
 func DefaultClientConfig() ClientConfig {
@@ -137,6 +138,7 @@ type settings struct {
 	CertBase64 string `yaml:"cert_base64"`
 	KeyBase64  string `yaml:"key_base64"`
 	Timeout    string `yaml:"timeout"`
+	Namespaces map[string]string `yaml:"namespaces"`
 }
 
 func applySettings(cfg *ClientConfig, file settings) error {
@@ -181,6 +183,14 @@ func applySettings(cfg *ClientConfig, file settings) error {
 			return fmt.Errorf("%w: parse timeout %q: %v", ErrConfig, file.Timeout, err)
 		}
 		cfg.Timeout = timeout
+	}
+	if len(file.Namespaces) > 0 {
+		if cfg.Namespaces == nil {
+			cfg.Namespaces = map[string]string{}
+		}
+		for k, v := range file.Namespaces {
+			cfg.Namespaces[k] = v
+		}
 	}
 
 	return nil
