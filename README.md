@@ -41,7 +41,7 @@ make build
 
 Binary output: `bin/opc-ua-cli`
 
-## First Run (Recommended)
+## First Run
 
 1. Create `config.yaml`:
 
@@ -64,19 +64,19 @@ timeout: 10s
 #   plant: urn:plant:model
 ```
 
-2. Validate config locally (no server connection):
+1. Validate config locally (no server connection):
 
 ```bash
 opc-ua-cli validate-config
 ```
 
-3. Verify endpoint/auth/security with a real server test:
+1. Verify endpoint/auth/security with a real server test:
 
 ```bash
 opc-ua-cli test-connection
 ```
 
-4. Inspect namespaces and read one value:
+1. Inspect namespaces and read one value:
 
 ```bash
 opc-ua-cli namespaces

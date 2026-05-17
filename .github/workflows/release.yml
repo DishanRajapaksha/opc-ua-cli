@@ -52,6 +52,17 @@ jobs:
           mkdir -p dist
           go build -trimpath -ldflags "-s -w" -o "dist/${{ matrix.artifact }}" .
 
+      - name: Install UPX
+        if: matrix.goos != 'darwin'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y upx-ucl
+
+      - name: Compress binary with UPX
+        if: matrix.goos != 'darwin'
+        run: |
+          upx --best --lzma "dist/${{ matrix.artifact }}"
+
       - name: Package binary
         shell: bash
         run: |
