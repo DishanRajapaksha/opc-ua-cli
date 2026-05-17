@@ -57,3 +57,30 @@ func (a *App) renderDataChange(format string, row domain.DataChange) error {
 	_, err := fmt.Fprintln(a.out, row.SourceTimestamp, row.NodeID, row.Value)
 	return err
 }
+
+func (a *App) renderAlarmEvent(format string, row domain.AlarmEvent) error {
+	if output.NormaliseFormat(format) == output.FormatJSON {
+		return output.WriteJSONLine(a.out, row)
+	}
+
+	_, err := fmt.Fprintf(
+		a.out,
+		"%s severity=%d source=%s message=%s eventType=%s eventId=%s\n",
+		row.Time,
+		row.Severity,
+		firstNonEmpty(row.SourceName, row.SourceNode, row.NodeID),
+		row.Message,
+		row.EventType,
+		row.EventID,
+	)
+	return err
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if value != "" {
+			return value
+		}
+	}
+	return ""
+}
