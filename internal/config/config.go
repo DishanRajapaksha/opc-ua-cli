@@ -9,7 +9,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const DefaultEndpoint = "opc.tcp://localhost:4840"
+const (
+	DefaultEndpoint   = "opc.tcp://localhost:4840"
+	DefaultConfigPath = "config.yaml"
+)
 
 // ClientConfig contains connection and security settings for an OPC UA client session.
 type ClientConfig struct {
@@ -40,6 +43,9 @@ func LoadClientConfig(path string) (ClientConfig, error) {
 
 	contents, err := os.ReadFile(path)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) && path == DefaultConfigPath {
+			return cfg, nil
+		}
 		return cfg, fmt.Errorf("read config %q: %w", path, err)
 	}
 
