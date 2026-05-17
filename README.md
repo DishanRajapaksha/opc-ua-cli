@@ -96,7 +96,13 @@ opc-ua-cli read --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --
 Write a scalar value:
 
 ```bash
-opc-ua-cli write --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42
+opc-ua-cli write --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42 --yes
+```
+
+Preview a write without sending it:
+
+```bash
+opc-ua-cli write --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42 --dry-run
 ```
 
 Monitor a node value:
@@ -223,6 +229,13 @@ opc-ua-cli read \
 ```
 
 ## Write types
+
+`write` safety behavior:
+
+- The CLI prints endpoint, config/profile source, node, type, and value before write.
+- `--dry-run` prints the write plan and does not send a write request.
+- Without `--yes`, `write` asks for interactive confirmation.
+- In non-interactive/scripted mode, `write` fails unless `--yes` is provided.
 
 Supported scalar write types:
 

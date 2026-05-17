@@ -1,11 +1,13 @@
 package cli
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/DishanRajapaksha/opc-ua-cli/internal/config"
@@ -155,6 +157,8 @@ func (a *App) write(args []string) error {
 	node := fs.String("node", "", "node id to write")
 	value := fs.String("value", "", "value to write")
 	valueType := fs.String("type", "string", "scalar value type")
+	dryRun := fs.Bool("dry-run", false, "show what would be written without sending the write request")
+	yes := fs.Bool("yes", false, "skip interactive confirmation and perform write immediately")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -163,6 +167,43 @@ func (a *App) write(args []string) error {
 	}
 	if *node == "" {
 		return errors.New("--node is required")
+	}
+
+	source := "defaults and CLI flags"
+	if common.configPath != "" {
+		source = fmt.Sprintf("config=%s", common.configPath)
+		if common.profile != "" {
+			source += fmt.Sprintf(" profile=%s", common.profile)
+		}
+		source += " (with CLI overrides)"
+	}
+
+	fmt.Fprintln(a.out, "Write request")
+	fmt.Fprintf(a.out, "Endpoint: %s\n", common.client.Endpoint)
+	fmt.Fprintf(a.out, "Config Source: %s\n", source)
+	fmt.Fprintf(a.out, "Node: %s\n", *node)
+	fmt.Fprintf(a.out, "Type: %s\n", *valueType)
+	fmt.Fprintf(a.out, "Value: %s\n", *value)
+
+	if *dryRun {
+		fmt.Fprintln(a.out, "Dry run: write request not sent")
+		return nil
+	}
+
+	if !*yes {
+		if !isInteractiveTerminal() {
+			return errors.New("write confirmation required in non-interactive mode; pass --yes to continue")
+		}
+		fmt.Fprint(a.out, "Confirm write? [y/N]: ")
+		reader := bufio.NewReader(os.Stdin)
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			return fmt.Errorf("read confirmation: %w", err)
+		}
+		answer := strings.ToLower(strings.TrimSpace(line))
+		if answer != "y" && answer != "yes" {
+			return errors.New("write cancelled")
+		}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), common.client.Timeout)
@@ -179,6 +220,14 @@ func (a *App) write(args []string) error {
 		return err
 	}
 	return a.renderWrite(common.format, row)
+}
+
+func isInteractiveTerminal() bool {
+	stat, err := os.Stdin.Stat()
+	if err != nil {
+		return false
+	}
+	return stat.Mode()&os.ModeCharDevice != 0
 }
 
 func (a *App) monitor(args []string) error {
