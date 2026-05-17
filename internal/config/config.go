@@ -1,9 +1,14 @@
 package config
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -16,14 +21,16 @@ const (
 
 // ClientConfig contains connection and security settings for an OPC UA client session.
 type ClientConfig struct {
-	Endpoint string
-	Policy   string
-	Mode     string
-	Username string
-	Password string
-	CertFile string
-	KeyFile  string
-	Timeout  time.Duration
+	Endpoint   string
+	Policy     string
+	Mode       string
+	Username   string
+	Password   string
+	CertFile   string
+	KeyFile    string
+	CertDER    []byte
+	PrivateKey *rsa.PrivateKey
+	Timeout    time.Duration
 }
 
 func DefaultClientConfig() ClientConfig {
@@ -75,6 +82,20 @@ func LoadClientConfig(path string) (ClientConfig, error) {
 	if file.KeyFile != "" {
 		cfg.KeyFile = file.KeyFile
 	}
+	if file.CertBase64 != "" {
+		certDER, err := decodeCertificate(file.CertBase64)
+		if err != nil {
+			return cfg, fmt.Errorf("parse cert_base64: %w", err)
+		}
+		cfg.CertDER = certDER
+	}
+	if file.KeyBase64 != "" {
+		privateKey, err := decodePrivateKey(file.KeyBase64)
+		if err != nil {
+			return cfg, fmt.Errorf("parse key_base64: %w", err)
+		}
+		cfg.PrivateKey = privateKey
+	}
 	if file.Timeout != "" {
 		timeout, err := time.ParseDuration(file.Timeout)
 		if err != nil {
@@ -91,16 +112,66 @@ func LoadClientConfig(path string) (ClientConfig, error) {
 }
 
 func (c ClientConfig) UsesSecurity() bool {
-	return c.Username != "" || c.Policy != "None" || c.Mode != "None" || c.CertFile != "" || c.KeyFile != ""
+	return c.Username != "" || c.Policy != "None" || c.Mode != "None" || c.CertFile != "" || c.KeyFile != "" || len(c.CertDER) > 0 || c.PrivateKey != nil
 }
 
 type configFile struct {
-	Endpoint string `yaml:"endpoint"`
-	Policy   string `yaml:"policy"`
-	Mode     string `yaml:"mode"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	CertFile string `yaml:"cert"`
-	KeyFile  string `yaml:"key"`
-	Timeout  string `yaml:"timeout"`
+	Endpoint   string `yaml:"endpoint"`
+	Policy     string `yaml:"policy"`
+	Mode       string `yaml:"mode"`
+	Username   string `yaml:"username"`
+	Password   string `yaml:"password"`
+	CertFile   string `yaml:"cert"`
+	KeyFile    string `yaml:"key"`
+	CertBase64 string `yaml:"cert_base64"`
+	KeyBase64  string `yaml:"key_base64"`
+	Timeout    string `yaml:"timeout"`
+}
+
+func decodeCertificate(value string) ([]byte, error) {
+	decoded, err := decodeBase64(value)
+	if err != nil {
+		return nil, err
+	}
+	if block, _ := pem.Decode(decoded); block != nil {
+		if block.Type != "CERTIFICATE" {
+			return nil, fmt.Errorf("expected CERTIFICATE PEM block, got %s", block.Type)
+		}
+		decoded = block.Bytes
+	}
+	if _, err := x509.ParseCertificate(decoded); err != nil {
+		return nil, err
+	}
+	return decoded, nil
+}
+
+func decodePrivateKey(value string) (*rsa.PrivateKey, error) {
+	decoded, err := decodeBase64(value)
+	if err != nil {
+		return nil, err
+	}
+	if block, _ := pem.Decode(decoded); block != nil {
+		decoded = block.Bytes
+	}
+	if key, err := x509.ParsePKCS1PrivateKey(decoded); err == nil {
+		return key, nil
+	}
+	parsed, err := x509.ParsePKCS8PrivateKey(decoded)
+	if err != nil {
+		return nil, err
+	}
+	key, ok := parsed.(*rsa.PrivateKey)
+	if !ok {
+		return nil, errors.New("private key is not RSA")
+	}
+	return key, nil
+}
+
+func decodeBase64(value string) ([]byte, error) {
+	compact := strings.Join(strings.Fields(value), "")
+	decoded, err := base64.StdEncoding.DecodeString(compact)
+	if err == nil {
+		return decoded, nil
+	}
+	return base64.RawStdEncoding.DecodeString(compact)
 }
