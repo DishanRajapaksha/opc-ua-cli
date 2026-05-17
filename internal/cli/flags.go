@@ -28,7 +28,7 @@ func addCommonFlags(fs *flag.FlagSet, opts *commonOptions) {
 	fs.StringVar(&opts.client.CertFile, "cert", cfg.CertFile, "client certificate file")
 	fs.StringVar(&opts.client.KeyFile, "key", cfg.KeyFile, "client private key file")
 	fs.DurationVar(&opts.client.Timeout, "timeout", cfg.Timeout, "request timeout")
-	fs.StringVar(&opts.format, "format", "table", "output format: table, text, json")
+	fs.StringVar(&opts.format, "format", "table", "output format: table, text, json, jsonl")
 }
 
 func (opts *commonOptions) applyConfig(fs *flag.FlagSet) error {

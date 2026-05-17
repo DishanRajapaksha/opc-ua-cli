@@ -94,7 +94,7 @@ Common flags:
   --cert       Client certificate file
   --key        Client private key file
   --timeout    Request timeout
-  --format     table, text, or json
+  --format     table, text, json, or jsonl
 
 CLI flags override values loaded from --config and --profile.`)
 }
