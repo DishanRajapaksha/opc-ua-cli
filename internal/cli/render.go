@@ -50,6 +50,53 @@ func (a *App) renderWrite(format string, row domain.WriteResult) error {
 	return output.WriteTable(a.out, []string{"NodeID", "Status"}, [][]string{{row.NodeID, row.Status}})
 }
 
+func renderReadMany(a *App, format string, rows []domain.ReadResult) error {
+	switch output.NormaliseFormat(format) {
+	case output.FormatJSON:
+		return output.WriteJSON(a.out, rows)
+	case output.FormatJSONL:
+		for _, row := range rows {
+			if err := output.WriteJSONLine(a.out, row); err != nil {
+				return err
+			}
+		}
+		return nil
+	case output.FormatText:
+		for _, row := range rows {
+			if err := output.WriteText(a.out, row.Value); err != nil {
+				return err
+			}
+		}
+		return nil
+	default:
+		tableRows := make([][]string, 0, len(rows))
+		for _, row := range rows {
+			tableRows = append(tableRows, []string{row.NodeID, row.Status, fmt.Sprint(row.Value), row.SourceTimestamp, row.ServerTimestamp})
+		}
+		return output.WriteTable(a.out, []string{"NodeID", "Status", "Value", "Source timestamp", "Server timestamp"}, tableRows)
+	}
+}
+
+func renderWriteMany(a *App, format string, rows []domain.WriteResult) error {
+	switch output.NormaliseFormat(format) {
+	case output.FormatJSON:
+		return output.WriteJSON(a.out, rows)
+	case output.FormatJSONL:
+		for _, row := range rows {
+			if err := output.WriteJSONLine(a.out, row); err != nil {
+				return err
+			}
+		}
+		return nil
+	default:
+		tableRows := make([][]string, 0, len(rows))
+		for _, row := range rows {
+			tableRows = append(tableRows, []string{row.NodeID, row.Status})
+		}
+		return output.WriteTable(a.out, []string{"NodeID", "Status"}, tableRows)
+	}
+}
+
 func (a *App) renderDataChange(format string, row domain.DataChange) error {
 	switch output.NormaliseFormat(format) {
 	case output.FormatJSON, output.FormatJSONL:

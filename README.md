@@ -97,6 +97,18 @@ Read a node:
 opc-ua-cli read --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32'
 ```
 
+Read multiple nodes in order:
+
+```bash
+opc-ua-cli read --config config.yaml --node 'ns=2;s=A' --node 'ns=2;s=B'
+```
+
+Read nodes from file (one node per line):
+
+```bash
+opc-ua-cli read --config config.yaml --nodes nodes.txt
+```
+
 Read using namespace URI/alias form:
 
 ```bash
@@ -113,6 +125,12 @@ Write a scalar value:
 
 ```bash
 opc-ua-cli write --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42 --yes
+```
+
+Write multiple nodes:
+
+```bash
+opc-ua-cli write --config config.yaml --item 'ns=2;s=A:int32:42' --item 'ns=2;s=B:bool:true' --yes
 ```
 
 Preview a write without sending it:

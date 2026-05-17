@@ -152,15 +152,22 @@ func (a *App) read(args []string) error {
 	fs := a.newFlagSet("read")
 	common := commonOptions{}
 	addCommonFlags(fs, &common)
-	node := fs.String("node", "", "node id to read")
+	var nodes stringList
+	nodesFile := fs.String("nodes", "", "path to file with one node id per line")
+	fs.Var(&nodes, "node", "node id to read; repeat for multiple nodes")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	if err := common.applyConfig(fs); err != nil {
 		return err
 	}
-	if *node == "" {
-		return errors.New("--node is required")
+	fromFile, err := readNodesFile(*nodesFile)
+	if err != nil {
+		return err
+	}
+	allNodes := append([]string(nodes), fromFile...)
+	if len(allNodes) == 0 {
+		return errors.New("at least one --node is required")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), common.client.Timeout)
@@ -172,11 +179,18 @@ func (a *App) read(args []string) error {
 	}
 	defer service.Close(context.Background())
 
-	row, err := service.Read(ctx, *node)
-	if err != nil {
-		return err
+	rows := make([]domain.ReadResult, 0, len(allNodes))
+	for _, node := range allNodes {
+		row, readErr := service.Read(ctx, node)
+		if readErr != nil {
+			return readErr
+		}
+		rows = append(rows, row)
 	}
-	return a.renderRead(common.format, row)
+	if len(rows) == 1 {
+		return a.renderRead(common.format, rows[0])
+	}
+	return renderReadMany(a, common.format, rows)
 }
 
 func (a *App) write(args []string) error {
@@ -186,6 +200,8 @@ func (a *App) write(args []string) error {
 	node := fs.String("node", "", "node id to write")
 	value := fs.String("value", "", "value to write")
 	valueType := fs.String("type", "string", "scalar value type")
+	var items stringList
+	fs.Var(&items, "item", "write item in node:type:value format; repeat for multiple nodes")
 	dryRun := fs.Bool("dry-run", false, "show what would be written without sending the write request")
 	yes := fs.Bool("yes", false, "skip interactive confirmation and perform write immediately")
 	if err := fs.Parse(args); err != nil {
@@ -194,8 +210,19 @@ func (a *App) write(args []string) error {
 	if err := common.applyConfig(fs); err != nil {
 		return err
 	}
-	if *node == "" {
-		return errors.New("--node is required")
+	writeItems := make([]writeItem, 0, len(items)+1)
+	for _, raw := range items {
+		item, err := parseWriteItem(raw)
+		if err != nil {
+			return err
+		}
+		writeItems = append(writeItems, item)
+	}
+	if *node != "" {
+		writeItems = append(writeItems, writeItem{Node: *node, Type: *valueType, Value: *value})
+	}
+	if len(writeItems) == 0 {
+		return errors.New("either --node/--type/--value or at least one --item is required")
 	}
 
 	source := "defaults and CLI flags"
@@ -210,9 +237,11 @@ func (a *App) write(args []string) error {
 	fmt.Fprintln(a.out, "Write request")
 	fmt.Fprintf(a.out, "Endpoint: %s\n", common.client.Endpoint)
 	fmt.Fprintf(a.out, "Config Source: %s\n", source)
-	fmt.Fprintf(a.out, "Node: %s\n", *node)
-	fmt.Fprintf(a.out, "Type: %s\n", *valueType)
-	fmt.Fprintf(a.out, "Value: %s\n", *value)
+	for i, item := range writeItems {
+		fmt.Fprintf(a.out, "Item %d Node: %s\n", i+1, item.Node)
+		fmt.Fprintf(a.out, "Item %d Type: %s\n", i+1, item.Type)
+		fmt.Fprintf(a.out, "Item %d Value: %s\n", i+1, item.Value)
+	}
 
 	if *dryRun {
 		fmt.Fprintln(a.out, "Dry run: write request not sent")
@@ -244,11 +273,59 @@ func (a *App) write(args []string) error {
 	}
 	defer service.Close(context.Background())
 
-	row, err := service.Write(ctx, *node, *valueType, *value)
-	if err != nil {
-		return err
+	rows := make([]domain.WriteResult, 0, len(writeItems))
+	for _, item := range writeItems {
+		row, writeErr := service.Write(ctx, item.Node, item.Type, item.Value)
+		if writeErr != nil {
+			return writeErr
+		}
+		rows = append(rows, row)
 	}
-	return a.renderWrite(common.format, row)
+	if len(rows) == 1 {
+		return a.renderWrite(common.format, rows[0])
+	}
+	return renderWriteMany(a, common.format, rows)
+}
+
+type writeItem struct {
+	Node  string
+	Type  string
+	Value string
+}
+
+func parseWriteItem(raw string) (writeItem, error) {
+	parts := strings.SplitN(raw, ":", 3)
+	if len(parts) != 3 {
+		return writeItem{}, errors.New("invalid --item format, expected node:type:value")
+	}
+	if strings.TrimSpace(parts[0]) == "" {
+		return writeItem{}, errors.New("invalid --item format: node cannot be empty")
+	}
+	return writeItem{Node: parts[0], Type: parts[1], Value: parts[2]}, nil
+}
+
+func readNodesFile(path string) ([]string, error) {
+	if path == "" {
+		return nil, nil
+	}
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("read nodes file %q: %w", path, err)
+	}
+	defer file.Close()
+	var nodes []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		nodes = append(nodes, line)
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("scan nodes file %q: %w", path, err)
+	}
+	return nodes, nil
 }
 
 func isInteractiveTerminal() bool {
