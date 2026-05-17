@@ -5,8 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"os"
-	"os/signal"
 	"time"
 
 	"github.com/DishanRajapaksha/opc-ua-cli/internal/config"
@@ -152,15 +150,14 @@ func (a *App) monitor(args []string) error {
 	}
 	defer service.Close(context.Background())
 
-	runCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
+	runCtx := context.Background()
 	if *duration > 0 {
 		var cancel context.CancelFunc
 		runCtx, cancel = context.WithTimeout(runCtx, *duration)
 		defer cancel()
 	}
 
-	subscription, err := service.Monitor(runCtx, nodes, *interval)
+	subscription, err := service.Monitor(runCtx, []string(nodes), *interval)
 	if err != nil {
 		return err
 	}
