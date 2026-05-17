@@ -135,6 +135,14 @@ You can still skip the config file and pass connection flags directly:
 opc-ua-cli read --endpoint opc.tcp://localhost:4840 --node 'ns=2;s=Demo.Static.Scalar.Int32'
 ```
 
+Run field diagnostics:
+
+```bash
+opc-ua-cli test-connection
+opc-ua-cli test-connection --config site-a.yaml
+opc-ua-cli test-connection --profile site-a
+```
+
 ## Exit codes
 
 The CLI uses stable exit codes so automation can branch on failure category:

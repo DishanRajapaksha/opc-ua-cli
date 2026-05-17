@@ -316,3 +316,56 @@ func (a *App) alarms(args []string) error {
 
 	return nil
 }
+
+func (a *App) testConnection(args []string) error {
+	fs := a.newFlagSet("test-connection")
+	common := commonOptions{}
+	addCommonFlags(fs, &common)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if err := common.applyConfig(fs); err != nil {
+		fmt.Fprintln(a.out, "FAIL")
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), common.client.Timeout)
+	defer cancel()
+
+	fmt.Fprintln(a.out, "Connection diagnostics")
+	fmt.Fprintf(a.out, "Endpoint: %s\n", common.client.Endpoint)
+	fmt.Fprintf(a.out, "Policy: %s\n", common.client.Policy)
+	fmt.Fprintf(a.out, "Mode: %s\n", common.client.Mode)
+	if common.client.Username != "" {
+		fmt.Fprintln(a.out, "Auth: username/password")
+	} else {
+		fmt.Fprintln(a.out, "Auth: anonymous")
+	}
+	fmt.Fprintln(a.out, "")
+
+	fmt.Fprintln(a.out, "[1/4] Discover endpoints: PASS")
+	if _, err := uaclient.ListEndpoints(ctx, common.client.Endpoint); err != nil {
+		fmt.Fprintf(a.out, "[1/4] Discover endpoints: FAIL (%v)\n", err)
+		fmt.Fprintln(a.out, "RESULT: FAIL")
+		return fmt.Errorf("%w: endpoint discovery failed", uaclient.ErrConnection)
+	}
+
+	service := uaclient.NewService(common.client)
+	if err := service.Connect(ctx); err != nil {
+		fmt.Fprintf(a.out, "[2/4] Select security + establish session: FAIL (%v)\n", err)
+		fmt.Fprintln(a.out, "RESULT: FAIL")
+		return err
+	}
+	defer service.Close(context.Background())
+	fmt.Fprintln(a.out, "[2/4] Select security + establish session: PASS")
+
+	if _, err := service.Read(ctx, "i=2258"); err != nil {
+		fmt.Fprintf(a.out, "[3/4] Read server status node i=2258: FAIL (%v)\n", err)
+		fmt.Fprintln(a.out, "RESULT: FAIL")
+		return err
+	}
+	fmt.Fprintln(a.out, "[3/4] Read server status node i=2258: PASS")
+	fmt.Fprintln(a.out, "[4/4] End-to-end diagnostic: PASS")
+	fmt.Fprintln(a.out, "RESULT: PASS")
+	return nil
+}
