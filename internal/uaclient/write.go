@@ -1,0 +1,90 @@
+package uaclient
+
+import (
+	"context"
+	"fmt"
+	"strconv"
+	"strings"
+
+	"github.com/DishanRajapaksha/opc-ua-cli/internal/domain"
+	"github.com/gopcua/opcua/ua"
+)
+
+func (s *Service) Write(ctx context.Context, node string, valueType string, rawValue string) (domain.WriteResult, error) {
+	nodeID, err := ua.ParseNodeID(node)
+	if err != nil {
+		return domain.WriteResult{}, err
+	}
+
+	parsed, err := parseScalar(valueType, rawValue)
+	if err != nil {
+		return domain.WriteResult{}, err
+	}
+
+	variant, err := ua.NewVariant(parsed)
+	if err != nil {
+		return domain.WriteResult{}, err
+	}
+
+	response, err := s.client.Write(ctx, &ua.WriteRequest{
+		NodesToWrite: []*ua.WriteValue{
+			{
+				NodeID:      nodeID,
+				AttributeID: ua.AttributeIDValue,
+				Value: &ua.DataValue{
+					EncodingMask: ua.DataValueValue,
+					Value:        variant,
+				},
+			},
+		},
+	})
+	if err != nil {
+		return domain.WriteResult{}, err
+	}
+	if len(response.Results) == 0 {
+		return domain.WriteResult{}, fmt.Errorf("write returned no result")
+	}
+	if response.Results[0] != ua.StatusOK {
+		return domain.WriteResult{}, fmt.Errorf("write failed: %s", response.Results[0])
+	}
+
+	return domain.WriteResult{NodeID: node, Status: fmt.Sprint(response.Results[0])}, nil
+}
+
+func parseScalar(valueType string, raw string) (interface{}, error) {
+	switch strings.ToLower(strings.TrimSpace(valueType)) {
+	case "", "string":
+		return raw, nil
+	case "bool", "boolean":
+		return strconv.ParseBool(raw)
+	case "int8", "sbyte":
+		value, err := strconv.ParseInt(raw, 10, 8)
+		return int8(value), err
+	case "int16":
+		value, err := strconv.ParseInt(raw, 10, 16)
+		return int16(value), err
+	case "int", "int32":
+		value, err := strconv.ParseInt(raw, 10, 32)
+		return int32(value), err
+	case "int64":
+		return strconv.ParseInt(raw, 10, 64)
+	case "uint8", "byte":
+		value, err := strconv.ParseUint(raw, 10, 8)
+		return byte(value), err
+	case "uint16":
+		value, err := strconv.ParseUint(raw, 10, 16)
+		return uint16(value), err
+	case "uint", "uint32":
+		value, err := strconv.ParseUint(raw, 10, 32)
+		return uint32(value), err
+	case "uint64":
+		return strconv.ParseUint(raw, 10, 64)
+	case "float", "float32":
+		value, err := strconv.ParseFloat(raw, 32)
+		return float32(value), err
+	case "double", "float64":
+		return strconv.ParseFloat(raw, 64)
+	default:
+		return nil, fmt.Errorf("unsupported scalar type %q", valueType)
+	}
+}
