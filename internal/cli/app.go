@@ -50,6 +50,8 @@ func (a *App) Run(args []string) int {
 		err = a.testConnection(args[1:])
 	case "init-config":
 		err = a.initConfig(args[1:])
+	case "completions":
+		err = a.completions(args[1:])
 	default:
 		a.printUsage()
 		fmt.Fprintf(a.err, "unknown command %q\n", args[0])
@@ -77,6 +79,7 @@ Usage:
   opc-ua-cli watch --profile site-a --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s
   opc-ua-cli alarms --profile site-a --node i=2253 --min-severity 500 --interval 1s
   opc-ua-cli test-connection --profile site-a
+  opc-ua-cli completions zsh
   opc-ua-cli init-config
   opc-ua-cli init-config --output site-a.yaml
   opc-ua-cli init-config --force
@@ -91,6 +94,7 @@ Commands:
   watch               Poll node values without subscriptions
   alarms              Subscribe to OPC UA alarm and event notifications
   test-connection     Run connection/auth/security diagnostics
+  completions         Generate shell completion scripts
   init-config         Write a starter YAML config file
 
 Common flags:

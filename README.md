@@ -195,6 +195,24 @@ opc-ua-cli test-connection --config site-a.yaml
 opc-ua-cli test-connection --profile site-a
 ```
 
+Generate shell completions:
+
+```bash
+opc-ua-cli completions bash
+opc-ua-cli completions zsh
+```
+
+Install examples:
+
+```bash
+# bash
+opc-ua-cli completions bash > /etc/bash_completion.d/opc-ua-cli
+
+# zsh
+mkdir -p "${HOME}/.zsh/completions"
+opc-ua-cli completions zsh > "${HOME}/.zsh/completions/_opc-ua-cli"
+```
+
 ## Exit codes
 
 The CLI uses stable exit codes so automation can branch on failure category:
