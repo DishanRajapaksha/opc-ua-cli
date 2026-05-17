@@ -21,12 +21,26 @@ func (a *App) newFlagSet(name string) *flag.FlagSet {
 func (a *App) endpoints(args []string) error {
 	fs := a.newFlagSet("endpoints")
 	cfg := config.DefaultClientConfig()
+	configPath := ""
 	format := "table"
+	fs.StringVar(&configPath, "config", "", "YAML config file")
 	fs.StringVar(&cfg.Endpoint, "endpoint", cfg.Endpoint, "OPC UA endpoint URL")
 	fs.DurationVar(&cfg.Timeout, "timeout", cfg.Timeout, "request timeout")
 	fs.StringVar(&format, "format", format, "output format: table, json")
 	if err := fs.Parse(args); err != nil {
 		return err
+	}
+
+	fileCfg, err := config.LoadClientConfig(configPath)
+	if err != nil {
+		return err
+	}
+	visited := visitedFlags(fs)
+	if !visited["endpoint"] {
+		cfg.Endpoint = fileCfg.Endpoint
+	}
+	if !visited["timeout"] {
+		cfg.Timeout = fileCfg.Timeout
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
@@ -46,6 +60,9 @@ func (a *App) browse(args []string) error {
 	node := fs.String("node", "i=84", "root node id")
 	depth := fs.Int("depth", 1, "recursive browse depth")
 	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if err := common.applyConfig(fs); err != nil {
 		return err
 	}
 	if *depth < 0 {
@@ -74,6 +91,9 @@ func (a *App) read(args []string) error {
 	addCommonFlags(fs, &common)
 	node := fs.String("node", "", "node id to read")
 	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if err := common.applyConfig(fs); err != nil {
 		return err
 	}
 	if *node == "" {
@@ -106,6 +126,9 @@ func (a *App) write(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+	if err := common.applyConfig(fs); err != nil {
+		return err
+	}
 	if *node == "" {
 		return errors.New("--node is required")
 	}
@@ -135,6 +158,9 @@ func (a *App) monitor(args []string) error {
 	duration := fs.Duration("duration", 0, "stop after this duration; zero runs until interrupted")
 	fs.Var(&nodes, "node", "node id to monitor; repeat for multiple nodes")
 	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if err := common.applyConfig(fs); err != nil {
 		return err
 	}
 	if len(nodes) == 0 {
