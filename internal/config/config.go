@@ -94,6 +94,28 @@ func LoadClientConfigForProfile(path string, profile string) (ClientConfig, erro
 	return cfg, nil
 }
 
+func StarterConfigYAML() ([]byte, error) {
+	defaults := DefaultClientConfig()
+	root := &yaml.Node{Kind: yaml.MappingNode}
+	root.Content = append(root.Content,
+		scalar("endpoint"), commentedValue(defaults.Endpoint, "OPC UA endpoint URL"),
+		scalar("policy"), commentedValue(defaults.Policy, "Security policy (None, Basic256Sha256, ...)"),
+		scalar("mode"), commentedValue(defaults.Mode, "Security mode (None, Sign, SignAndEncrypt)"),
+		scalar("timeout"), commentedValue(defaults.Timeout.String(), "Request timeout (for example 10s, 30s)"),
+		scalar("username"), commentedValue("", "Optional username for user/password auth"),
+		scalar("password"), commentedValue("", "Optional password for user/password auth"),
+		scalar("cert_base64"), commentedValue("", "Optional base64 client certificate (DER or PEM bytes)"),
+		scalar("key_base64"), commentedValue("", "Optional base64 RSA private key (PKCS#1 or PKCS#8 PEM/DER)"),
+	)
+
+	doc := &yaml.Node{Kind: yaml.DocumentNode, Content: []*yaml.Node{root}}
+	out, err := yaml.Marshal(doc)
+	if err != nil {
+		return nil, fmt.Errorf("marshal starter config: %w", err)
+	}
+	return out, nil
+}
+
 func (c ClientConfig) UsesSecurity() bool {
 	return c.Username != "" || c.Policy != "None" || c.Mode != "None" || c.CertFile != "" || c.KeyFile != "" || len(c.CertDER) > 0 || c.PrivateKey != nil
 }
@@ -210,4 +232,12 @@ func decodeBase64(value string) ([]byte, error) {
 		return decoded, nil
 	}
 	return base64.RawStdEncoding.DecodeString(compact)
+}
+
+func scalar(value string) *yaml.Node {
+	return &yaml.Node{Kind: yaml.ScalarNode, Value: value}
+}
+
+func commentedValue(value string, comment string) *yaml.Node {
+	return &yaml.Node{Kind: yaml.ScalarNode, Value: value, HeadComment: comment}
 }

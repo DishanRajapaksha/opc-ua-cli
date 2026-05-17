@@ -5,12 +5,42 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/DishanRajapaksha/opc-ua-cli/internal/config"
 	"github.com/DishanRajapaksha/opc-ua-cli/internal/output"
 	"github.com/DishanRajapaksha/opc-ua-cli/internal/uaclient"
 )
+
+func (a *App) initConfig(args []string) error {
+	fs := a.newFlagSet("init-config")
+	outputPath := config.DefaultConfigPath
+	force := false
+	fs.StringVar(&outputPath, "output", outputPath, "output YAML config file")
+	fs.BoolVar(&force, "force", false, "overwrite output file if it exists")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	if !force {
+		if _, err := os.Stat(outputPath); err == nil {
+			return fmt.Errorf("refusing to overwrite existing file %q; use --force to overwrite", outputPath)
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("stat %q: %w", outputPath, err)
+		}
+	}
+
+	contents, err := config.StarterConfigYAML()
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(outputPath, contents, 0o600); err != nil {
+		return fmt.Errorf("write config %q: %w", outputPath, err)
+	}
+	fmt.Fprintf(a.out, "wrote starter config to %s\n", outputPath)
+	return nil
+}
 
 func (a *App) newFlagSet(name string) *flag.FlagSet {
 	fs := flag.NewFlagSet(name, flag.ContinueOnError)
