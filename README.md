@@ -14,6 +14,7 @@ This repository is the OPC UA sibling of `opc-xml-da-cli`. The goal is a practic
 - Output as tables, plain text, or JSON.
 - Support anonymous and username/password authentication.
 - Support OPC UA security policy/mode selection with client certificate and key files.
+- Load repeated connection settings from a small YAML config file.
 
 ## Install
 
@@ -32,59 +33,123 @@ make build
 
 The binary is written to `bin/opc-ua-cli`.
 
+## YAML config
+
+Create a local config file:
+
+```yaml
+endpoint: opc.tcp://localhost:4840
+policy: None
+mode: None
+timeout: 10s
+
+# Optional authentication.
+# username: user
+# password: secret
+
+# Optional client certificate settings for secured endpoints.
+# cert: client-cert.pem
+# key: client-key.pem
+```
+
+There is also a `config.example.yaml` in the repo.
+
+Use it like this:
+
+```bash
+opc-ua-cli read --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32'
+```
+
+CLI flags override the config file, so this is valid when you want a one-off endpoint change:
+
+```bash
+opc-ua-cli read --config config.yaml --endpoint opc.tcp://192.168.1.50:4840 --node 'ns=2;s=Demo.Static.Scalar.Int32'
+```
+
 ## Usage
 
-```bash
-opc-ua-cli endpoints --endpoint opc.tcp://localhost:4840
-```
+List endpoints:
 
 ```bash
-opc-ua-cli browse --endpoint opc.tcp://localhost:4840 --node i=84 --depth 1
+opc-ua-cli endpoints --config config.yaml
 ```
 
-```bash
-opc-ua-cli read --endpoint opc.tcp://localhost:4840 --node 'ns=2;s=Demo.Static.Scalar.Int32'
-```
+Browse nodes:
 
 ```bash
-opc-ua-cli read --endpoint opc.tcp://localhost:4840 --node 'ns=2;s=Demo.Static.Scalar.Int32' --format json
+opc-ua-cli browse --config config.yaml --node i=84 --depth 1
 ```
 
-```bash
-opc-ua-cli write --endpoint opc.tcp://localhost:4840 --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42
-```
+Read a node:
 
 ```bash
-opc-ua-cli monitor --endpoint opc.tcp://localhost:4840 --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s
+opc-ua-cli read --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32'
+```
+
+Read as JSON:
+
+```bash
+opc-ua-cli read --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --format json
+```
+
+Write a scalar value:
+
+```bash
+opc-ua-cli write --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42
+```
+
+Monitor a node:
+
+```bash
+opc-ua-cli monitor --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s
 ```
 
 Monitor for a fixed time:
 
 ```bash
-opc-ua-cli monitor --endpoint opc.tcp://localhost:4840 --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s --duration 30s
+opc-ua-cli monitor --config config.yaml --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s --duration 30s
+```
+
+You can still skip the config file and pass connection flags directly:
+
+```bash
+opc-ua-cli read --endpoint opc.tcp://localhost:4840 --node 'ns=2;s=Demo.Static.Scalar.Int32'
 ```
 
 ## Security and authentication
 
 Anonymous, no security:
 
-```bash
-opc-ua-cli read \
-  --endpoint opc.tcp://localhost:4840 \
-  --node 'ns=2;s=Demo.Static.Scalar.Int32'
+```yaml
+endpoint: opc.tcp://localhost:4840
+policy: None
+mode: None
+timeout: 10s
 ```
 
 Username/password:
 
-```bash
-opc-ua-cli read \
-  --endpoint opc.tcp://localhost:4840 \
-  --username user \
-  --password secret \
-  --node 'ns=2;s=Demo.Static.Scalar.Int32'
+```yaml
+endpoint: opc.tcp://localhost:4840
+policy: None
+mode: None
+username: user
+password: secret
+timeout: 10s
 ```
 
 Signed and encrypted endpoint:
+
+```yaml
+endpoint: opc.tcp://localhost:4840
+policy: Basic256Sha256
+mode: SignAndEncrypt
+cert: client-cert.pem
+key: client-key.pem
+timeout: 10s
+```
+
+Equivalent one-off command without YAML:
 
 ```bash
 opc-ua-cli read \
@@ -120,9 +185,10 @@ Aliases:
 ```text
 .
 ├── main.go
+├── config.example.yaml
 ├── internal
 │   ├── cli        # command parsing and command handlers
-│   ├── config     # connection and security configuration
+│   ├── config     # connection, security, and YAML configuration
 │   ├── domain     # plain application models
 │   ├── output     # table, text, and JSON rendering
 │   └── uaclient   # OPC UA session lifecycle and protocol operations
@@ -143,6 +209,8 @@ CI runs formatting, tests, and a build on pushes and pull requests.
 
 ## Design notes
 
-This is intentionally dependency-light. The CLI uses the Go standard `flag` package instead of Cobra because the command surface is small. If the tool grows into profiles, config files, completions, or nested command groups, Cobra becomes worth its rent. Until then, fewer moving parts wins.
+The CLI intentionally uses subcommands only. OPC UA has enough operation types that a flat flag-only interface becomes flag soup quickly.
+
+The config file is deliberately small and only covers connection settings. Node IDs, values, browse depth, output format, and monitor interval stay on the command line because those usually change per operation.
 
 The OPC UA implementation is isolated under `internal/uaclient`, so command parsing, output formatting, and protocol handling do not melt into one regrettable soup.
