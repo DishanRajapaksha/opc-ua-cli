@@ -30,6 +30,8 @@ func (a *App) Run(args []string) int {
 
 	var err error
 	switch args[0] {
+	case "version", "--version", "-v":
+		fmt.Fprintln(a.out, "opc-ua-cli development")
 	case "endpoints", "status":
 		err = a.endpoints(args[1:])
 	case "namespaces":
@@ -89,8 +91,10 @@ Usage:
   opc-ua-cli init-config
   opc-ua-cli init-config --output site-a.yaml
   opc-ua-cli init-config --force
+  opc-ua-cli version
 
 Commands:
+  version            Print version information
   endpoints, status   List server endpoints and security options
   namespaces          List namespace indexes and URIs
   browse              Browse child nodes
