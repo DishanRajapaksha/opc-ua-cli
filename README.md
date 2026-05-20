@@ -45,23 +45,8 @@ Binary output: `bin/opc-ua-cli`
 
 1. Create `config.yaml`:
 
-```yaml
-endpoint: opc.tcp://localhost:4840
-policy: None
-mode: None
-timeout: 10s
-
-# Optional authentication.
-# username: user
-# password: secret
-
-# Optional client certificate settings for secured endpoints.
-# cert: client-cert.pem
-# key: client-key.pem
-
-# Optional namespace aliases for nsu=alias;... node IDs.
-# namespaces:
-#   plant: urn:plant:model
+```bash
+opc-ua-cli init-config
 ```
 
 1. Validate config locally (no server connection):
