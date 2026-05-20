@@ -2,6 +2,8 @@ package cli
 
 import (
 	"errors"
+	"flag"
+	"strings"
 
 	"github.com/DishanRajapaksha/opc-ua-cli/internal/config"
 	"github.com/DishanRajapaksha/opc-ua-cli/internal/uaclient"
@@ -22,6 +24,10 @@ func mapExitCode(err error) int {
 	switch {
 	case err == nil:
 		return exitSuccess
+	case errors.Is(err, flag.ErrHelp):
+		return exitSuccess
+	case isFlagParseError(err):
+		return exitConfigError
 	case errors.Is(err, config.ErrConfig):
 		return exitConfigError
 	case errors.Is(err, uaclient.ErrAuthSecurity):
@@ -37,4 +43,11 @@ func mapExitCode(err error) int {
 	default:
 		return exitGeneralError
 	}
+}
+
+func isFlagParseError(err error) bool {
+	msg := err.Error()
+	return strings.Contains(msg, "flag provided but not defined") ||
+		strings.Contains(msg, "flag needs an argument") ||
+		strings.Contains(msg, "invalid value")
 }

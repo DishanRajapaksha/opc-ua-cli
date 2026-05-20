@@ -44,6 +44,17 @@ func TestRunCompletionsHelpSucceeds(t *testing.T) {
 	}
 }
 
+func TestTestConnectionRejectsFormatFlag(t *testing.T) {
+	var out, errOut bytes.Buffer
+	code := NewApp(&out, &errOut).Run([]string{"test-connection", "--format", "json"})
+	if code != exitConfigError {
+		t.Fatalf("Run(test-connection --format json) = %d, want %d", code, exitConfigError)
+	}
+	if !strings.Contains(errOut.String(), "flag provided but not defined") {
+		t.Fatalf("stderr missing flag error: %q", errOut.String())
+	}
+}
+
 func TestValidateConfigRequiresConfigFile(t *testing.T) {
 	var out, errOut bytes.Buffer
 	code := NewApp(&out, &errOut).Run([]string{"validate-config", "--config", "missing-test-config.yaml"})
