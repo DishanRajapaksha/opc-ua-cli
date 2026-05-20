@@ -123,7 +123,7 @@ func (a *App) endpoints(args []string) error {
 func (a *App) status(args []string) error {
 	fs := a.newFlagSet("status")
 	common := commonOptions{}
-	addCommonFlags(fs, &common)
+	addCommonFlags(fs, &common, "table", "output format: table, text, or json")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func (a *App) status(args []string) error {
 func (a *App) namespaces(args []string) error {
 	fs := a.newFlagSet("namespaces")
 	common := commonOptions{}
-	addCommonFlags(fs, &common)
+	addCommonFlags(fs, &common, "table", "output format: table")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -178,7 +178,7 @@ func (a *App) namespaces(args []string) error {
 func (a *App) attributes(args []string) error {
 	fs := a.newFlagSet("attributes")
 	common := commonOptions{}
-	addCommonFlags(fs, &common)
+	addCommonFlags(fs, &common, "table", "output format: table, text, or json")
 	node := fs.String("node", "", "node id to inspect")
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -208,7 +208,7 @@ func (a *App) attributes(args []string) error {
 func (a *App) browse(args []string) error {
 	fs := a.newFlagSet("browse")
 	common := commonOptions{}
-	addCommonFlags(fs, &common)
+	addCommonFlags(fs, &common, "table", "output format: table or json")
 	node := fs.String("node", "i=84", "root node id")
 	depth := fs.Int("depth", 1, "recursive browse depth")
 	if err := fs.Parse(args); err != nil {
@@ -240,7 +240,7 @@ func (a *App) browse(args []string) error {
 func (a *App) read(args []string) error {
 	fs := a.newFlagSet("read")
 	common := commonOptions{}
-	addCommonFlags(fs, &common)
+	addCommonFlags(fs, &common, "table", "output format: table, text, json, or jsonl")
 	var nodes stringList
 	nodesFile := fs.String("nodes", "", "path to file with one node id per line")
 	fs.Var(&nodes, "node", "node id to read; repeat for multiple nodes")
@@ -285,7 +285,7 @@ func (a *App) read(args []string) error {
 func (a *App) write(args []string) error {
 	fs := a.newFlagSet("write")
 	common := commonOptions{}
-	addCommonFlags(fs, &common)
+	addCommonFlags(fs, &common, "table", "output format: table, json, or jsonl")
 	node := fs.String("node", "", "node id to write")
 	value := fs.String("value", "", "value to write")
 	valueType := fs.String("type", "string", "scalar value type")
@@ -415,7 +415,7 @@ func isInteractiveTerminal() bool {
 func (a *App) monitor(args []string) error {
 	fs := a.newFlagSet("monitor")
 	common := commonOptions{}
-	addCommonFlags(fs, &common)
+	addCommonFlags(fs, &common, "text", "output format: text or jsonl")
 	var nodes stringList
 	interval := fs.Duration("interval", time.Second, "subscription interval")
 	duration := fs.Duration("duration", 0, "stop after this duration; zero runs until interrupted")
@@ -486,7 +486,7 @@ func (a *App) monitor(args []string) error {
 func (a *App) watch(args []string) error {
 	fs := a.newFlagSet("watch")
 	common := commonOptions{}
-	addCommonFlags(fs, &common)
+	addCommonFlags(fs, &common, "text", "output format: text or jsonl")
 	var nodes stringList
 	interval := fs.Duration("interval", time.Second, "poll interval")
 	duration := fs.Duration("duration", 0, "stop after this duration; zero runs until interrupted")
@@ -559,7 +559,7 @@ func (a *App) watch(args []string) error {
 func (a *App) alarms(args []string) error {
 	fs := a.newFlagSet("alarms")
 	common := commonOptions{}
-	addCommonFlags(fs, &common)
+	addCommonFlags(fs, &common, "text", "output format: text or jsonl")
 	node := fs.String("node", "i=2253", "event source node id; i=2253 is the Server object")
 	interval := fs.Duration("interval", time.Second, "subscription interval")
 	duration := fs.Duration("duration", 0, "stop after this duration; zero runs until interrupted")
@@ -637,7 +637,7 @@ func validateStreamFormat(format string) error {
 func (a *App) testConnection(args []string) error {
 	fs := a.newFlagSet("test-connection")
 	common := commonOptions{}
-	addCommonFlags(fs, &common)
+	addCommonFlags(fs, &common, "table", "output format: table")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
