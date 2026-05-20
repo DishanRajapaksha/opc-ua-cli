@@ -41,8 +41,10 @@ func (a *App) Run(args []string) int {
 	switch args[0] {
 	case "version", "--version", "-v":
 		fmt.Fprintln(a.out, "opc-ua-cli development")
-	case "endpoints", "status":
+	case "endpoints":
 		err = a.endpoints(args[1:])
+	case "status":
+		err = a.status(args[1:])
 	case "namespaces":
 		err = a.namespaces(args[1:])
 	case "browse":
@@ -105,7 +107,8 @@ Usage:
 
 Commands:
   version            Print version information
-  endpoints, status   List server endpoints and security options
+  endpoints           List server endpoints and security options
+  status              Read server status
   namespaces          List namespace indexes and URIs
   browse              Browse child nodes
   attributes          Inspect node metadata attributes

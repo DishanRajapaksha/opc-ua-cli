@@ -8,6 +8,7 @@ A script-friendly OPC UA command-line client written in Go.
 |---|---|
 | Validate local config | `opc-ua-cli validate-config` |
 | Test connectivity/auth/security | `opc-ua-cli test-connection` |
+| Read server status | `opc-ua-cli status` |
 | List server endpoints | `opc-ua-cli endpoints` |
 | List namespace indexes and URIs | `opc-ua-cli namespaces` |
 | Browse from root node | `opc-ua-cli browse --node i=84 --depth 1` |
@@ -99,8 +100,6 @@ opc-ua-cli namespaces
 opc-ua-cli browse --node i=84 --depth 1
 opc-ua-cli attributes --node 'ns=2;s=Demo.Value'
 ```
-
-`status` is currently an alias for `endpoints`.
 
 ### Read values
 

@@ -120,6 +120,33 @@ func (a *App) endpoints(args []string) error {
 	return a.renderEndpoints(format, rows)
 }
 
+func (a *App) status(args []string) error {
+	fs := a.newFlagSet("status")
+	common := commonOptions{}
+	addCommonFlags(fs, &common)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if err := common.applyConfig(fs); err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), common.client.Timeout)
+	defer cancel()
+
+	service := uaclient.NewService(common.client)
+	if err := service.Connect(ctx); err != nil {
+		return err
+	}
+	defer service.Close(context.Background())
+
+	row, err := service.Read(ctx, "i=2258")
+	if err != nil {
+		return err
+	}
+	return a.renderRead(common.format, row)
+}
+
 func (a *App) namespaces(args []string) error {
 	fs := a.newFlagSet("namespaces")
 	common := commonOptions{}

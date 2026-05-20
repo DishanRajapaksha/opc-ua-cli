@@ -57,8 +57,11 @@ _opc_ua_cli_completions() {
     alarms)
       COMPREPLY=( $(compgen -W "${common_flags} --node --interval --duration --min-severity" -- "${cur}") )
       ;;
-    endpoints|status)
+    endpoints)
       COMPREPLY=( $(compgen -W "--config --profile --endpoint --timeout --format --verbose --debug" -- "${cur}") )
+      ;;
+    status)
+      COMPREPLY=( $(compgen -W "${common_flags}" -- "${cur}") )
       ;;
     namespaces|test-connection|validate-config)
       COMPREPLY=( $(compgen -W "${common_flags}" -- "${cur}") )
@@ -82,7 +85,7 @@ _opc_ua_cli_completions() {
   local -a subcommands
   subcommands=(
     'endpoints:List server endpoints'
-    'status:List server endpoints'
+    'status:Read server status'
     'namespaces:List namespace indexes and URIs'
     'browse:Browse child nodes'
     'attributes:Inspect node metadata attributes'
@@ -138,8 +141,11 @@ _opc_ua_cli_completions() {
     alarms)
       _arguments $common_flags '--node[event source node]:node:' '--interval[subscription interval]:interval:' '--duration[stop after duration]:duration:' '--min-severity[min severity]:severity:'
       ;;
-    endpoints|status)
+    endpoints)
       _arguments '--config[YAML config file]:config file:_files' '--profile[Config profile name]:profile:' '--endpoint[OPC UA endpoint URL]:endpoint:' '--timeout[Request timeout]:duration:' '--format[Output format]:format:(table json)' '--verbose[Print high-level connection decisions]' '--debug[Enable lower-level OPC UA client debug logging]'
+      ;;
+    status)
+      _arguments $common_flags
       ;;
     namespaces|test-connection|validate-config)
       _arguments $common_flags
