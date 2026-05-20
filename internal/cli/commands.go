@@ -56,6 +56,12 @@ func (a *App) validateConfig(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+	if _, err := os.Stat(configPath); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("%w: config file %q not found; run opc-ua-cli init-config", config.ErrConfig, configPath)
+		}
+		return fmt.Errorf("%w: stat config %q: %v", config.ErrConfig, configPath, err)
+	}
 	cfg, err := config.LoadClientConfigForProfile(configPath, profile)
 	if err != nil {
 		return err
