@@ -33,6 +33,17 @@ func TestRunSubcommandHelpSucceeds(t *testing.T) {
 	}
 }
 
+func TestRunCompletionsHelpSucceeds(t *testing.T) {
+	var out, errOut bytes.Buffer
+	code := NewApp(&out, &errOut).Run([]string{"completions", "--help"})
+	if code != exitSuccess {
+		t.Fatalf("Run(completions --help) = %d, want %d; stderr=%q", code, exitSuccess, errOut.String())
+	}
+	if !strings.Contains(errOut.String(), "opc-ua-cli completions bash|zsh") {
+		t.Fatalf("stderr missing completions usage: %q", errOut.String())
+	}
+}
+
 func TestValidateConfigRequiresConfigFile(t *testing.T) {
 	var out, errOut bytes.Buffer
 	code := NewApp(&out, &errOut).Run([]string{"validate-config", "--config", "missing-test-config.yaml"})
