@@ -299,6 +299,9 @@ func (a *App) write(args []string) error {
 	if err := common.applyConfig(fs); err != nil {
 		return err
 	}
+	if *dryRun && *yes {
+		return errors.New("--dry-run and --yes cannot be used together")
+	}
 	writeItems := make([]writeItem, 0, len(items)+1)
 	for _, raw := range items {
 		item, err := parseWriteItem(raw)
@@ -332,25 +335,9 @@ func (a *App) write(args []string) error {
 		fmt.Fprintf(a.out, "Item %d Value: %s\n", i+1, item.Value)
 	}
 
-	if *dryRun {
+	if !*yes {
 		fmt.Fprintln(a.out, "Dry run: write request not sent")
 		return nil
-	}
-
-	if !*yes {
-		if !isInteractiveTerminal() {
-			return errors.New("write confirmation required in non-interactive mode; pass --yes to continue")
-		}
-		fmt.Fprint(a.out, "Confirm write? [y/N]: ")
-		reader := bufio.NewReader(os.Stdin)
-		line, err := reader.ReadString('\n')
-		if err != nil {
-			return fmt.Errorf("read confirmation: %w", err)
-		}
-		answer := strings.ToLower(strings.TrimSpace(line))
-		if answer != "y" && answer != "yes" {
-			return errors.New("write cancelled")
-		}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), common.client.Timeout)

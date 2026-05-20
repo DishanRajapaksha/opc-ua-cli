@@ -16,7 +16,7 @@ A script-friendly OPC UA command-line client written in Go.
 | Read one node | `opc-ua-cli read --node 'ns=2;s=Demo.Static.Scalar.Int32'` |
 | Read multiple nodes | `opc-ua-cli read --node 'ns=2;s=A' --node 'ns=2;s=B'` |
 | Read nodes from file | `opc-ua-cli read --nodes nodes.txt` |
-| Dry-run a write | `opc-ua-cli write --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42 --dry-run` |
+| Dry-run a write | `opc-ua-cli write --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42` |
 | Execute a write | `opc-ua-cli write --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42 --yes` |
 | Monitor (subscription) | `opc-ua-cli monitor --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s` |
 | Watch (polling) | `opc-ua-cli watch --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s` |
@@ -121,6 +121,7 @@ opc-ua-cli read --node 'nsu=plant;s=Inverter01.ActivePower'
 
 ```bash
 # Preview only (no write request sent)
+opc-ua-cli write --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42
 opc-ua-cli write --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42 --dry-run
 
 # Execute write (recommended for scripts)
@@ -141,8 +142,9 @@ Supported write types:
 Write safety behavior:
 
 - Prints endpoint, config/profile source, node, type, and value before write.
-- Requires confirmation unless `--yes` is provided.
-- Fails in non-interactive mode without `--yes`.
+- Does not send by default.
+- Requires `--yes` to send.
+- Rejects `--dry-run` and `--yes` together.
 
 ### Stream changes
 

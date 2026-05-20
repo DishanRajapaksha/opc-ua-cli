@@ -64,3 +64,25 @@ func TestNormaliseGlobalFlagsPreservesCommandOverride(t *testing.T) {
 		t.Fatalf("normalised args = %#v, want %#v", got, want)
 	}
 }
+
+func TestWriteDefaultsToDryRun(t *testing.T) {
+	var out, errOut bytes.Buffer
+	code := NewApp(&out, &errOut).Run([]string{"write", "--node", "i=2258", "--type", "string", "--value", "x"})
+	if code != exitSuccess {
+		t.Fatalf("Run(write dry-run default) = %d, want %d; stderr=%q", code, exitSuccess, errOut.String())
+	}
+	if !strings.Contains(out.String(), "Dry run: write request not sent") {
+		t.Fatalf("stdout = %q", out.String())
+	}
+}
+
+func TestWriteRejectsDryRunAndYes(t *testing.T) {
+	var out, errOut bytes.Buffer
+	code := NewApp(&out, &errOut).Run([]string{"write", "--node", "i=2258", "--type", "string", "--value", "x", "--dry-run", "--yes"})
+	if code != exitGeneralError {
+		t.Fatalf("Run(write --dry-run --yes) = %d, want %d", code, exitGeneralError)
+	}
+	if !strings.Contains(errOut.String(), "--dry-run and --yes cannot be used together") {
+		t.Fatalf("stderr = %q", errOut.String())
+	}
+}
