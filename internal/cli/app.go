@@ -1,9 +1,11 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 )
 
 type App struct {
@@ -23,12 +25,19 @@ func Main() {
 }
 
 func (a *App) Run(args []string) int {
+	normalisedArgs, err := normaliseGlobalFlags(args)
+	if err != nil {
+		fmt.Fprintln(a.err, err)
+		return exitConfigError
+	}
+	args = normalisedArgs
+
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
 		a.printUsage()
 		return 0
 	}
 
-	var err error
+	err = nil
 	switch args[0] {
 	case "version", "--version", "-v":
 		fmt.Fprintln(a.out, "opc-ua-cli development")
@@ -76,6 +85,7 @@ func (a *App) printUsage() {
 	fmt.Fprintln(a.out, `opc-ua-cli is a small OPC UA command-line client.
 
 Usage:
+  opc-ua-cli [global flags] <command> [flags]
   opc-ua-cli endpoints --profile local
   opc-ua-cli namespaces --profile local
   opc-ua-cli browse --profile local --node i=84 --depth 1
@@ -125,4 +135,117 @@ Common flags:
   --debug      Enable lower-level OPC UA client debug logging
 
 CLI flags override values loaded from --config and --profile.`)
+}
+
+func normaliseGlobalFlags(args []string) ([]string, error) {
+	if len(args) == 0 {
+		return args, nil
+	}
+
+	var globals []string
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if arg == "--" {
+			if i+1 >= len(args) {
+				return nil, errors.New("command is required after --")
+			}
+			return appendCommandGlobals(args[i+1:], globals), nil
+		}
+		if !strings.HasPrefix(arg, "-") || arg == "-" {
+			return appendCommandGlobals(args[i:], globals), nil
+		}
+		if arg == "--help" || arg == "-h" || arg == "--version" || arg == "-v" {
+			return args[i:], nil
+		}
+
+		name, inlineValue, hasInlineValue := strings.Cut(arg, "=")
+		switch name {
+		case "--verbose", "--debug":
+			if hasInlineValue {
+				return nil, fmt.Errorf("%s does not take a value", name)
+			}
+			globals = append(globals, name)
+		case "--config", "--profile", "--endpoint", "--policy", "--mode", "--username", "--password", "--cert", "--key", "--timeout", "--format":
+			value := inlineValue
+			if !hasInlineValue {
+				i++
+				if i >= len(args) || strings.HasPrefix(args[i], "-") {
+					return nil, fmt.Errorf("%s requires a value", name)
+				}
+				value = args[i]
+			}
+			if value == "" {
+				return nil, fmt.Errorf("%s requires a value", name)
+			}
+			globals = append(globals, name, value)
+		default:
+			return nil, fmt.Errorf("unknown global flag %q", name)
+		}
+	}
+
+	return nil, errors.New("command is required")
+}
+
+func appendCommandGlobals(args []string, globals []string) []string {
+	if len(args) == 0 || len(globals) == 0 {
+		return args
+	}
+	command := args[0]
+	filteredGlobals := filterGlobalsForCommand(command, globals)
+	if len(filteredGlobals) == 0 {
+		return args
+	}
+	out := make([]string, 0, len(args)+len(filteredGlobals))
+	out = append(out, command)
+	out = append(out, filteredGlobals...)
+	out = append(out, args[1:]...)
+	return out
+}
+
+func filterGlobalsForCommand(command string, globals []string) []string {
+	out := make([]string, 0, len(globals))
+	for i := 0; i < len(globals); i++ {
+		name := globals[i]
+		if !commandSupportsGlobalFlag(command, name) {
+			if globalFlagTakesValue(name) {
+				i++
+			}
+			continue
+		}
+		out = append(out, name)
+		if globalFlagTakesValue(name) {
+			i++
+			if i < len(globals) {
+				out = append(out, globals[i])
+			}
+		}
+	}
+	return out
+}
+
+func commandSupportsGlobalFlag(command string, name string) bool {
+	switch command {
+	case "validate-config":
+		switch name {
+		case "--config", "--profile", "--verbose", "--debug":
+			return true
+		default:
+			return false
+		}
+	}
+	switch command {
+	case "endpoints", "status", "namespaces", "browse", "attributes", "read", "write", "monitor", "watch", "alarms", "test-connection":
+		return true
+	default:
+		return false
+	}
+}
+
+func globalFlagTakesValue(name string) bool {
+	switch name {
+	case "--verbose", "--debug":
+		return false
+	default:
+		return true
+	}
 }
