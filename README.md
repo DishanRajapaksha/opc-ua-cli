@@ -162,7 +162,7 @@ opc-ua-cli watch --node 'ns=2;s=Demo.Static.Scalar.Int32' --duration 1m --format
 
 ```bash
 opc-ua-cli alarms --node i=2253 --min-severity 500 --interval 1s
-opc-ua-cli alarms --node i=2253 --min-severity 0 --format json
+opc-ua-cli alarms --node i=2253 --min-severity 0 --format jsonl
 ```
 
 Notes:
