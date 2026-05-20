@@ -16,6 +16,14 @@ type commonOptions struct {
 }
 
 func addCommonFlags(fs *flag.FlagSet, opts *commonOptions, defaultFormat string, formatHelp string) {
+	addCommonFlagsBase(fs, opts, defaultFormat, formatHelp, true)
+}
+
+func addCommonFlagsWithoutFormat(fs *flag.FlagSet, opts *commonOptions) {
+	addCommonFlagsBase(fs, opts, "", "", false)
+}
+
+func addCommonFlagsBase(fs *flag.FlagSet, opts *commonOptions, defaultFormat string, formatHelp string, includeFormat bool) {
 	cfg := config.DefaultClientConfig()
 	opts.client = cfg
 	opts.configPath = config.DefaultConfigPath
@@ -30,7 +38,9 @@ func addCommonFlags(fs *flag.FlagSet, opts *commonOptions, defaultFormat string,
 	fs.StringVar(&opts.client.CertFile, "cert", cfg.CertFile, "client certificate file")
 	fs.StringVar(&opts.client.KeyFile, "key", cfg.KeyFile, "client private key file")
 	fs.DurationVar(&opts.client.Timeout, "timeout", cfg.Timeout, "request timeout")
-	fs.StringVar(&opts.format, "format", defaultFormat, formatHelp)
+	if includeFormat {
+		fs.StringVar(&opts.format, "format", defaultFormat, formatHelp)
+	}
 	fs.BoolVar(&opts.verbose, "verbose", false, "print high-level connection decisions")
 	fs.BoolVar(&opts.debug, "debug", false, "enable lower-level OPC UA client debug logging")
 }

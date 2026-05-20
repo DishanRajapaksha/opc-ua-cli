@@ -637,7 +637,7 @@ func validateStreamFormat(format string) error {
 func (a *App) testConnection(args []string) error {
 	fs := a.newFlagSet("test-connection")
 	common := commonOptions{}
-	addCommonFlags(fs, &common, "table", "output format: table")
+	addCommonFlagsWithoutFormat(fs, &common)
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
