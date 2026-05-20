@@ -200,6 +200,8 @@ Commands support formats where applicable:
 - `json`
 - `jsonl`
 
+Stream commands (`monitor`, `watch`, and `alarms`) use `jsonl` for machine-readable event output. They do not use `json`, because streams are not a single complete JSON document.
+
 Example:
 
 ```bash

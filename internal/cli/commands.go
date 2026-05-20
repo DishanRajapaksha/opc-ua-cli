@@ -439,6 +439,9 @@ func (a *App) monitor(args []string) error {
 	if err := common.applyConfig(fs); err != nil {
 		return err
 	}
+	if err := validateStreamFormat(common.format); err != nil {
+		return err
+	}
 	if len(nodes) == 0 {
 		return errors.New("at least one --node is required")
 	}
@@ -505,6 +508,9 @@ func (a *App) watch(args []string) error {
 		return err
 	}
 	if err := common.applyConfig(fs); err != nil {
+		return err
+	}
+	if err := validateStreamFormat(common.format); err != nil {
 		return err
 	}
 	if len(nodes) == 0 {
@@ -577,6 +583,9 @@ func (a *App) alarms(args []string) error {
 	if err := common.applyConfig(fs); err != nil {
 		return err
 	}
+	if err := validateStreamFormat(common.format); err != nil {
+		return err
+	}
 	if *minSeverity > 1000 {
 		return errors.New("--min-severity must be between 0 and 1000")
 	}
@@ -628,6 +637,13 @@ func (a *App) alarms(args []string) error {
 		}
 	}
 
+	return nil
+}
+
+func validateStreamFormat(format string) error {
+	if output.NormaliseFormat(format) == output.FormatJSON {
+		return errors.New("stream commands use line-delimited output; use --format jsonl instead of --format json")
+	}
 	return nil
 }
 

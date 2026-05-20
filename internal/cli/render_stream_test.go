@@ -43,3 +43,12 @@ func TestRenderAlarmEventJSONL(t *testing.T) {
 		t.Fatalf("unexpected output: %q", line)
 	}
 }
+
+func TestValidateStreamFormatRejectsJSON(t *testing.T) {
+	if err := validateStreamFormat("json"); err == nil {
+		t.Fatal("expected json stream format to be rejected")
+	}
+	if err := validateStreamFormat("jsonl"); err != nil {
+		t.Fatalf("validateStreamFormat(jsonl) returned error: %v", err)
+	}
+}
