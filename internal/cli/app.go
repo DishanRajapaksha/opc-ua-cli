@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -76,6 +77,9 @@ func (a *App) Run(args []string) int {
 	}
 
 	if err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return exitSuccess
+		}
 		fmt.Fprintln(a.err, err)
 		return mapExitCode(err)
 	}

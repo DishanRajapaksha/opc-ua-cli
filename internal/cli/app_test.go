@@ -22,6 +22,17 @@ func TestRunVersion(t *testing.T) {
 	}
 }
 
+func TestRunSubcommandHelpSucceeds(t *testing.T) {
+	var out, errOut bytes.Buffer
+	code := NewApp(&out, &errOut).Run([]string{"read", "--help"})
+	if code != exitSuccess {
+		t.Fatalf("Run(read --help) = %d, want %d; stderr=%q", code, exitSuccess, errOut.String())
+	}
+	if !strings.Contains(errOut.String(), "Usage of read:") {
+		t.Fatalf("stderr missing read usage: %q", errOut.String())
+	}
+}
+
 func TestValidateConfigRequiresConfigFile(t *testing.T) {
 	var out, errOut bytes.Buffer
 	code := NewApp(&out, &errOut).Run([]string{"validate-config", "--config", "missing-test-config.yaml"})
