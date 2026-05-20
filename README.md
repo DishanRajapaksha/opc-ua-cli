@@ -94,10 +94,13 @@ opc-ua-cli read --config config.yaml --endpoint opc.tcp://192.168.1.50:4840 --no
 
 ```bash
 opc-ua-cli endpoints
+opc-ua-cli status
 opc-ua-cli namespaces
 opc-ua-cli browse --node i=84 --depth 1
 opc-ua-cli attributes --node 'ns=2;s=Demo.Value'
 ```
+
+`status` is currently an alias for `endpoints`.
 
 ### Read values
 
