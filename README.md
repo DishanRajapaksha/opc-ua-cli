@@ -12,6 +12,7 @@ A script-friendly OPC UA command-line client written in Go.
 | List server endpoints | `opc-ua-cli endpoints` |
 | List namespace indexes and URIs | `opc-ua-cli namespaces` |
 | Browse from root node | `opc-ua-cli browse --node i=84 --depth 1` |
+| Browse interactively | `opc-ua-cli tui --node i=84 --interval 1s` |
 | Inspect node metadata/permissions | `opc-ua-cli attributes --node 'ns=2;s=Demo.Value'` |
 | Read one node | `opc-ua-cli read --node 'ns=2;s=Demo.Static.Scalar.Int32'` |
 | Read multiple nodes | `opc-ua-cli read --node 'ns=2;s=A' --node 'ns=2;s=B'` |
@@ -98,8 +99,17 @@ opc-ua-cli endpoints
 opc-ua-cli status
 opc-ua-cli namespaces
 opc-ua-cli browse --node i=84 --depth 1
+opc-ua-cli tui --node i=84 --interval 1s
 opc-ua-cli attributes --node 'ns=2;s=Demo.Value'
 ```
+
+### Interactive browser
+
+```bash
+opc-ua-cli tui --node i=84 --interval 1s
+```
+
+The TUI opens a tree browser with node attributes, current reads, monitored values, and an event log. Use arrows/Enter to expand nodes, Tab to move focus, `r` to read once, `m` to monitor, `u` to unmonitor, `R` to reload children, and `q` to exit.
 
 ### Read values
 

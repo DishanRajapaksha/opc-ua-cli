@@ -33,6 +33,50 @@ func TestRunSubcommandHelpSucceeds(t *testing.T) {
 	}
 }
 
+func TestRunTUIHelpSucceeds(t *testing.T) {
+	var out, errOut bytes.Buffer
+	code := NewApp(&out, &errOut).Run([]string{"tui", "--help"})
+	if code != exitSuccess {
+		t.Fatalf("Run(tui --help) = %d, want %d; stderr=%q", code, exitSuccess, errOut.String())
+	}
+	if !strings.Contains(errOut.String(), "Usage of tui:") {
+		t.Fatalf("stderr missing tui usage: %q", errOut.String())
+	}
+}
+
+func TestRunTUIRejectsInvalidInterval(t *testing.T) {
+	var out, errOut bytes.Buffer
+	code := NewApp(&out, &errOut).Run([]string{"tui", "--interval", "0s"})
+	if code != exitGeneralError {
+		t.Fatalf("Run(tui --interval 0s) = %d, want %d", code, exitGeneralError)
+	}
+	if !strings.Contains(errOut.String(), "--interval must be greater than zero") {
+		t.Fatalf("stderr = %q", errOut.String())
+	}
+}
+
+func TestNormaliseGlobalFlagsSupportsTUI(t *testing.T) {
+	got, err := normaliseGlobalFlags([]string{"--timeout", "2s", "tui", "--node", "i=84"})
+	if err != nil {
+		t.Fatalf("normaliseGlobalFlags returned error: %v", err)
+	}
+	want := []string{"tui", "--timeout", "2s", "--node", "i=84"}
+	if strings.Join(got, "\x00") != strings.Join(want, "\x00") {
+		t.Fatalf("normalised args = %#v, want %#v", got, want)
+	}
+}
+
+func TestCompletionsIncludeTUI(t *testing.T) {
+	var out, errOut bytes.Buffer
+	code := NewApp(&out, &errOut).Run([]string{"completions", "bash"})
+	if code != exitSuccess {
+		t.Fatalf("Run(completions bash) = %d, want %d; stderr=%q", code, exitSuccess, errOut.String())
+	}
+	if !strings.Contains(out.String(), "tui") {
+		t.Fatalf("bash completion missing tui: %q", out.String())
+	}
+}
+
 func TestRunCompletionsHelpSucceeds(t *testing.T) {
 	var out, errOut bytes.Buffer
 	code := NewApp(&out, &errOut).Run([]string{"completions", "--help"})

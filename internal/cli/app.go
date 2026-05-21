@@ -50,6 +50,8 @@ func (a *App) Run(args []string) int {
 		err = a.namespaces(args[1:])
 	case "browse":
 		err = a.browse(args[1:])
+	case "tui":
+		err = a.tui(args[1:])
 	case "attributes":
 		err = a.attributes(args[1:])
 	case "read":
@@ -95,6 +97,7 @@ Usage:
   opc-ua-cli endpoints --profile local
   opc-ua-cli namespaces --profile local
   opc-ua-cli browse --profile local --node i=84 --depth 1
+  opc-ua-cli tui --profile local --node i=84 --interval 1s
   opc-ua-cli attributes --profile local --node 'ns=2;s=Demo.Value'
   opc-ua-cli read --profile site-a --node 'ns=2;s=Demo.Static.Scalar.Int32'
   opc-ua-cli write --profile site-a --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42
@@ -115,6 +118,7 @@ Commands:
   status              Read server status
   namespaces          List namespace indexes and URIs
   browse              Browse child nodes
+  tui                 Browse nodes interactively
   attributes          Inspect node metadata attributes
   read                Read a node value
   write               Write a scalar node value
@@ -241,7 +245,7 @@ func commandSupportsGlobalFlag(command string, name string) bool {
 		}
 	}
 	switch command {
-	case "endpoints", "status", "namespaces", "browse", "attributes", "read", "write", "monitor", "watch", "alarms", "test-connection":
+	case "endpoints", "status", "namespaces", "browse", "tui", "attributes", "read", "write", "monitor", "watch", "alarms", "test-connection":
 		return true
 	default:
 		return false

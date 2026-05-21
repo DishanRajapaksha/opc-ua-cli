@@ -28,7 +28,7 @@ func (a *App) completions(args []string) error {
 	}
 }
 
-const completionSubcommands = "endpoints status namespaces browse attributes read write monitor watch alarms test-connection validate-config init-config completions help"
+const completionSubcommands = "endpoints status namespaces browse tui attributes read write monitor watch alarms test-connection validate-config init-config completions help"
 const completionCommonFlags = "--config --profile --endpoint --policy --mode --username --password --cert --key --timeout --format --verbose --debug"
 
 const bashCompletionScript = `#!/usr/bin/env bash
@@ -53,6 +53,9 @@ _opc_ua_cli_completions() {
       ;;
     browse)
       COMPREPLY=( $(compgen -W "${common_flags} --node --depth" -- "${cur}") )
+      ;;
+    tui)
+      COMPREPLY=( $(compgen -W "--config --profile --endpoint --policy --mode --username --password --cert --key --timeout --verbose --debug --node --interval" -- "${cur}") )
       ;;
     attributes)
       COMPREPLY=( $(compgen -W "${common_flags} --node" -- "${cur}") )
@@ -94,6 +97,7 @@ _opc_ua_cli_completions() {
     'status:Read server status'
     'namespaces:List namespace indexes and URIs'
     'browse:Browse child nodes'
+    'tui:Browse nodes interactively'
     'attributes:Inspect node metadata attributes'
     'read:Read node values'
     'write:Write node values'
@@ -137,6 +141,9 @@ _opc_ua_cli_completions() {
       ;;
     browse)
       _arguments $common_flags '--node[root node id]:node:' '--depth[browse depth]:depth:'
+      ;;
+    tui)
+      _arguments '--config[YAML config file]:config file:_files' '--profile[Config profile name]:profile:' '--endpoint[OPC UA endpoint URL]:endpoint:' '--policy[Security policy]:policy:' '--mode[Security mode]:mode:' '--username[Username]:username:' '--password[Password]:password:' '--cert[Client certificate file]:cert:_files' '--key[Client private key file]:key:_files' '--timeout[Request timeout]:duration:' '--verbose[Print high-level connection decisions]' '--debug[Enable lower-level OPC UA client debug logging]' '--node[root node id]:node:' '--interval[monitor subscription interval]:interval:'
       ;;
     attributes)
       _arguments $common_flags '--node[node id]:node:'
