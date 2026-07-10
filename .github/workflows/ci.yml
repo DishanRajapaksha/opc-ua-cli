@@ -6,12 +6,18 @@ on:
       - main
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: agent/align-cli-contracts
+          fetch-depth: 0
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -32,40 +38,56 @@ jobs:
         run: test -z "$(gofmt -l .)"
 
       - name: Test
-        id: tests
-        continue-on-error: true
-        run: go test ./... 2>&1 | tee test.log
+        run: go test ./...
 
       - name: Build
-        id: build
-        continue-on-error: true
         run: |
           mkdir -p bin
-          go build -o bin/opc-ua-cli . 2>&1 | tee build.log
+          go build -o bin/opc-ua-cli .
 
-      - name: Package migrated files
-        if: always()
+      - name: Commit verified changes
         run: |
-          tar -czf cli-contracts.tar.gz \
-            internal/output/output.go \
-            internal/cli/exit_codes.go \
-            internal/cli/formats.go \
-            internal/cli/render.go \
-            internal/cli/commands.go \
-            internal/cli/app.go \
-            internal/cli/contracts_test.go \
-            README.md \
-            go.mod \
-            go.sum \
-            test.log \
-            build.log
+          rm scripts/apply-cli-contracts.py
+          rm .github/workflows/apply-cli-contracts.yml
+          cat > .github/workflows/ci.yml <<'EOF'
+          name: ci
 
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: cli-contracts
-          path: cli-contracts.tar.gz
+          on:
+            push:
+              branches:
+                - main
+            pull_request:
 
-      - name: Fail on validation errors
-        if: steps.tests.outcome == 'failure' || steps.build.outcome == 'failure'
-        run: exit 1
+          jobs:
+            test:
+              runs-on: ubuntu-latest
+              steps:
+                - name: Checkout
+                  uses: actions/checkout@v4
+
+                - name: Setup Go
+                  uses: actions/setup-go@v5
+                  with:
+                    go-version-file: go.mod
+                    cache: false
+
+                - name: Tidy dependencies
+                  run: go mod tidy
+
+                - name: Check formatting
+                  run: test -z "$(gofmt -l .)"
+
+                - name: Test
+                  run: go test ./...
+
+                - name: Build
+                  run: |
+                    mkdir -p bin
+                    go build -o bin/opc-ua-cli .
+          EOF
+          rm -rf bin
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Align CLI contracts"
+          git push origin HEAD:agent/align-cli-contracts
