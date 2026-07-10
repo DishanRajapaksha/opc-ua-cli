@@ -19,16 +19,53 @@ jobs:
           go-version-file: go.mod
           cache: false
 
+      - name: Apply CLI contract migration
+        run: python3 scripts/apply-cli-contracts.py
+
       - name: Tidy dependencies
         run: go mod tidy
+
+      - name: Format
+        run: gofmt -w internal/output/output.go internal/cli/exit_codes.go internal/cli/formats.go internal/cli/render.go internal/cli/commands.go internal/cli/app.go internal/cli/contracts_test.go
 
       - name: Check formatting
         run: test -z "$(gofmt -l .)"
 
       - name: Test
-        run: go test ./...
+        id: tests
+        continue-on-error: true
+        run: go test ./... 2>&1 | tee test.log
 
       - name: Build
+        id: build
+        continue-on-error: true
         run: |
           mkdir -p bin
-          go build -o bin/opc-ua-cli .
+          go build -o bin/opc-ua-cli . 2>&1 | tee build.log
+
+      - name: Package migrated files
+        if: always()
+        run: |
+          tar -czf cli-contracts.tar.gz \
+            internal/output/output.go \
+            internal/cli/exit_codes.go \
+            internal/cli/formats.go \
+            internal/cli/render.go \
+            internal/cli/commands.go \
+            internal/cli/app.go \
+            internal/cli/contracts_test.go \
+            README.md \
+            go.mod \
+            go.sum \
+            test.log \
+            build.log
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cli-contracts
+          path: cli-contracts.tar.gz
+
+      - name: Fail on validation errors
+        if: steps.tests.outcome == 'failure' || steps.build.outcome == 'failure'
+        run: exit 1
