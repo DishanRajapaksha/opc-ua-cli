@@ -141,7 +141,7 @@ Common flags:
   --cert       Client certificate file
   --key        Client private key file
   --timeout    Request timeout
-  --format     table, text, json, or jsonl
+  --format     snapshots: table, text, json, csv; streams: text, jsonl, csv
   --verbose    Print high-level connection decisions
   --debug      Enable lower-level OPC UA client debug logging
 
