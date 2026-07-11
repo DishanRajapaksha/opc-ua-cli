@@ -205,14 +205,20 @@ opc-ua-cli test-connection --profile site-a
 
 ## Output Formats
 
-Commands support formats where applicable:
+Snapshot commands support:
 
 - `table` (default)
 - `text`
 - `json`
-- `jsonl`
+- `csv`
 
-Stream commands (`monitor`, `watch`, and `alarms`) use `jsonl` for machine-readable event output. They do not use `json`, because streams are not a single complete JSON document.
+Stream commands (`monitor`, `watch`, and `alarms`) support:
+
+- `text` (default)
+- `jsonl`
+- `csv`
+
+Streams reject `json` and `table`, because an unbounded stream is neither one complete JSON document nor a finite table.
 
 Example:
 
@@ -291,12 +297,14 @@ Stable exit codes for scripts:
 
 - `0`: success
 - `1`: general error
-- `2`: config error
-- `3`: connection error
-- `4`: authentication/security error
-- `5`: node not found
-- `6`: bad OPC UA status code
-- `7`: write rejected
+- `2`: usage or configuration error
+- `3`: transport or connection error
+- `4`: protocol or request error
+- `5`: authentication or security error
+- `6`: node not found
+- `7`: write or control rejected
+- `8`: operation timeout
+- `9`: output or formatting error
 
 ## Command Help
 

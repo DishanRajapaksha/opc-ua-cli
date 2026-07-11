@@ -91,10 +91,13 @@ func (a *App) endpoints(args []string) error {
 	fs.StringVar(&profile, "profile", "", "config profile name")
 	fs.StringVar(&cfg.Endpoint, "endpoint", cfg.Endpoint, "OPC UA endpoint URL")
 	fs.DurationVar(&cfg.Timeout, "timeout", cfg.Timeout, "request timeout")
-	fs.StringVar(&format, "format", format, "output format: table, json")
+	fs.StringVar(&format, "format", format, "output format: table, text, json, or csv")
 	fs.BoolVar(&cfg.Verbose, "verbose", false, "print high-level connection decisions")
 	fs.BoolVar(&cfg.Debug, "debug", false, "enable lower-level OPC UA client debug logging")
 	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if err := validateSnapshotFormat(format); err != nil {
 		return err
 	}
 
@@ -123,11 +126,14 @@ func (a *App) endpoints(args []string) error {
 func (a *App) status(args []string) error {
 	fs := a.newFlagSet("status")
 	common := commonOptions{}
-	addCommonFlags(fs, &common, "table", "output format: table, text, or json")
+	addCommonFlags(fs, &common, "table", "output format: table, text, json, or csv")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	if err := common.applyConfig(fs); err != nil {
+		return err
+	}
+	if err := validateSnapshotFormat(common.format); err != nil {
 		return err
 	}
 
@@ -150,11 +156,14 @@ func (a *App) status(args []string) error {
 func (a *App) namespaces(args []string) error {
 	fs := a.newFlagSet("namespaces")
 	common := commonOptions{}
-	addCommonFlags(fs, &common, "table", "output format: table")
+	addCommonFlags(fs, &common, "table", "output format: table, text, json, or csv")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	if err := common.applyConfig(fs); err != nil {
+		return err
+	}
+	if err := validateSnapshotFormat(common.format); err != nil {
 		return err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), common.client.Timeout)
@@ -172,18 +181,21 @@ func (a *App) namespaces(args []string) error {
 	for i, uri := range uris {
 		rows = append(rows, []string{fmt.Sprint(i), uri})
 	}
-	return output.WriteTable(a.out, []string{"Index", "URI"}, rows)
+	return a.renderNamespaces(common.format, rows)
 }
 
 func (a *App) attributes(args []string) error {
 	fs := a.newFlagSet("attributes")
 	common := commonOptions{}
-	addCommonFlags(fs, &common, "table", "output format: table, text, or json")
+	addCommonFlags(fs, &common, "table", "output format: table, text, json, or csv")
 	node := fs.String("node", "", "node id to inspect")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	if err := common.applyConfig(fs); err != nil {
+		return err
+	}
+	if err := validateSnapshotFormat(common.format); err != nil {
 		return err
 	}
 	if *node == "" {
@@ -208,13 +220,16 @@ func (a *App) attributes(args []string) error {
 func (a *App) browse(args []string) error {
 	fs := a.newFlagSet("browse")
 	common := commonOptions{}
-	addCommonFlags(fs, &common, "table", "output format: table or json")
+	addCommonFlags(fs, &common, "table", "output format: table, text, json, or csv")
 	node := fs.String("node", "i=84", "root node id")
 	depth := fs.Int("depth", 1, "recursive browse depth")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	if err := common.applyConfig(fs); err != nil {
+		return err
+	}
+	if err := validateSnapshotFormat(common.format); err != nil {
 		return err
 	}
 	if *depth < 0 {
@@ -240,7 +255,7 @@ func (a *App) browse(args []string) error {
 func (a *App) read(args []string) error {
 	fs := a.newFlagSet("read")
 	common := commonOptions{}
-	addCommonFlags(fs, &common, "table", "output format: table, text, json, or jsonl")
+	addCommonFlags(fs, &common, "table", "output format: table, text, json, or csv")
 	var nodes stringList
 	nodesFile := fs.String("nodes", "", "path to file with one node id per line")
 	fs.Var(&nodes, "node", "node id to read; repeat for multiple nodes")
@@ -248,6 +263,9 @@ func (a *App) read(args []string) error {
 		return err
 	}
 	if err := common.applyConfig(fs); err != nil {
+		return err
+	}
+	if err := validateSnapshotFormat(common.format); err != nil {
 		return err
 	}
 	fromFile, err := readNodesFile(*nodesFile)
@@ -285,7 +303,7 @@ func (a *App) read(args []string) error {
 func (a *App) write(args []string) error {
 	fs := a.newFlagSet("write")
 	common := commonOptions{}
-	addCommonFlags(fs, &common, "table", "output format: table, json, or jsonl")
+	addCommonFlags(fs, &common, "table", "output format: table, text, json, or csv")
 	node := fs.String("node", "", "node id to write")
 	value := fs.String("value", "", "value to write")
 	valueType := fs.String("type", "string", "scalar value type")
@@ -297,6 +315,9 @@ func (a *App) write(args []string) error {
 		return err
 	}
 	if err := common.applyConfig(fs); err != nil {
+		return err
+	}
+	if err := validateSnapshotFormat(common.format); err != nil {
 		return err
 	}
 	if *dryRun && *yes {
@@ -415,7 +436,7 @@ func isInteractiveTerminal() bool {
 func (a *App) monitor(args []string) error {
 	fs := a.newFlagSet("monitor")
 	common := commonOptions{}
-	addCommonFlags(fs, &common, "text", "output format: text or jsonl")
+	addCommonFlags(fs, &common, "text", "output format: text, jsonl, or csv")
 	var nodes stringList
 	interval := fs.Duration("interval", time.Second, "subscription interval")
 	duration := fs.Duration("duration", 0, "stop after this duration; zero runs until interrupted")
@@ -458,6 +479,11 @@ func (a *App) monitor(args []string) error {
 	events := subscription.Events
 	errorsCh := subscription.Errors
 	format := output.NormaliseFormat(common.format)
+	if format == output.FormatCSV {
+		if err := output.WriteCSV(a.out, dataChangeHeaders(), nil); err != nil {
+			return err
+		}
+	}
 
 	for events != nil || errorsCh != nil {
 		select {
@@ -486,7 +512,7 @@ func (a *App) monitor(args []string) error {
 func (a *App) watch(args []string) error {
 	fs := a.newFlagSet("watch")
 	common := commonOptions{}
-	addCommonFlags(fs, &common, "text", "output format: text or jsonl")
+	addCommonFlags(fs, &common, "text", "output format: text, jsonl, or csv")
 	var nodes stringList
 	interval := fs.Duration("interval", time.Second, "poll interval")
 	duration := fs.Duration("duration", 0, "stop after this duration; zero runs until interrupted")
@@ -526,6 +552,11 @@ func (a *App) watch(args []string) error {
 	ticker := time.NewTicker(*interval)
 	defer ticker.Stop()
 	format := output.NormaliseFormat(common.format)
+	if format == output.FormatCSV {
+		if err := output.WriteCSV(a.out, dataChangeHeaders(), nil); err != nil {
+			return err
+		}
+	}
 
 	for {
 		for _, node := range nodes {
@@ -559,7 +590,7 @@ func (a *App) watch(args []string) error {
 func (a *App) alarms(args []string) error {
 	fs := a.newFlagSet("alarms")
 	common := commonOptions{}
-	addCommonFlags(fs, &common, "text", "output format: text or jsonl")
+	addCommonFlags(fs, &common, "text", "output format: text, jsonl, or csv")
 	node := fs.String("node", "i=2253", "event source node id; i=2253 is the Server object")
 	interval := fs.Duration("interval", time.Second, "subscription interval")
 	duration := fs.Duration("duration", 0, "stop after this duration; zero runs until interrupted")
@@ -602,6 +633,11 @@ func (a *App) alarms(args []string) error {
 	events := subscription.Events
 	errorsCh := subscription.Errors
 	format := output.NormaliseFormat(common.format)
+	if format == output.FormatCSV {
+		if err := output.WriteCSV(a.out, alarmHeaders(), nil); err != nil {
+			return err
+		}
+	}
 
 	for events != nil || errorsCh != nil {
 		select {
@@ -624,13 +660,6 @@ func (a *App) alarms(args []string) error {
 		}
 	}
 
-	return nil
-}
-
-func validateStreamFormat(format string) error {
-	if output.NormaliseFormat(format) == output.FormatJSON {
-		return errors.New("stream commands use line-delimited output; use --format jsonl instead of --format json")
-	}
 	return nil
 }
 
