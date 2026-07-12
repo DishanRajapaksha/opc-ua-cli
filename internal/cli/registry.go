@@ -20,7 +20,11 @@ var cliRegistry = command.Registry{
 		{Name: "debug", Summary: "enable client diagnostics"},
 	},
 	Commands: []command.Command{
-		{Name: "endpoints", Summary: "List server endpoints and security options"},
+		{
+			Name:        "endpoints",
+			Summary:     "List server endpoints and security options",
+			GlobalFlags: []string{"config", "profile", "endpoint", "timeout", "format", "verbose", "debug"},
+		},
 		{Name: "status", Summary: "Read server status"},
 		{Name: "namespaces", Summary: "List namespace indexes and URIs"},
 		{Name: "browse", Summary: "Browse child nodes", Flags: registryFlags("node", "depth")},
@@ -31,12 +35,25 @@ var cliRegistry = command.Registry{
 		{Name: "monitor", Summary: "Subscribe to data changes", Flags: registryFlags("node", "interval", "duration")},
 		{Name: "watch", Summary: "Poll node values", Flags: registryFlags("node", "interval", "duration")},
 		{Name: "alarms", Summary: "Subscribe to alarms and events", Flags: registryFlags("node", "interval", "duration", "min-severity")},
-		{Name: "test-connection", Summary: "Run connection diagnostics"},
-		{Name: "validate-config", Summary: "Validate local config"},
-		{Name: "init-config", Summary: "Write a starter YAML config", Flags: registryFlags("output", "force")},
-		{Name: "completions", Summary: "Generate shell completion scripts"},
-		{Name: "help", Summary: "Print help"},
-		{Name: "version", Summary: "Print version information"},
+		{
+			Name:        "test-connection",
+			Summary:     "Run connection diagnostics",
+			GlobalFlags: []string{"config", "profile", "endpoint", "policy", "mode", "username", "password", "cert", "key", "timeout", "verbose", "debug"},
+		},
+		{
+			Name:        "validate-config",
+			Summary:     "Validate local config",
+			GlobalFlags: []string{"config", "profile", "verbose", "debug"},
+		},
+		{
+			Name:        "init-config",
+			Summary:     "Write a starter YAML config",
+			Flags:       registryFlags("output", "force"),
+			GlobalFlags: []string{},
+		},
+		{Name: "completions", Summary: "Generate shell completion scripts", LeadingArgs: 1, GlobalFlags: []string{}},
+		{Name: "help", Summary: "Print help", GlobalFlags: []string{}},
+		{Name: "version", Summary: "Print version information", GlobalFlags: []string{}},
 	},
 }
 
