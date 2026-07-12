@@ -5,7 +5,7 @@ import sharedhelp "github.com/DishanRajapaksha/industrial-cli-kit/help"
 func (a *App) writeRegistryUsage() {
 	_ = sharedhelp.Write(a.out, cliRegistry, sharedhelp.Options{
 		Description: "opc-ua-cli is a small OPC UA command-line client.",
-		Usage: []string{"opc-ua-cli [global flags] <command> [flags]"},
+		Usage:       []string{"opc-ua-cli [global flags] <command> [flags]"},
 		Examples: []string{
 			"opc-ua-cli endpoints --profile local",
 			"opc-ua-cli namespaces --profile local",
