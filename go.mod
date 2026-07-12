@@ -3,6 +3,7 @@ module github.com/DishanRajapaksha/opc-ua-cli
 go 1.23
 
 require (
+	github.com/DishanRajapaksha/industrial-cli-kit v0.1.0
 	github.com/gdamore/tcell/v2 v2.8.1
 	github.com/gopcua/opcua v0.8.0
 	github.com/rivo/tview v0.42.0
