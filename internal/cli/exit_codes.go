@@ -6,22 +6,23 @@ import (
 	"flag"
 	"strings"
 
+	"github.com/DishanRajapaksha/industrial-cli-kit/exitcode"
 	"github.com/DishanRajapaksha/opc-ua-cli/internal/config"
 	"github.com/DishanRajapaksha/opc-ua-cli/internal/output"
 	"github.com/DishanRajapaksha/opc-ua-cli/internal/uaclient"
 )
 
 const (
-	exitSuccess         = 0
-	exitGeneralError    = 1
-	exitConfigError     = 2
-	exitConnection      = 3
-	exitProtocolRequest = 4
-	exitAuthSecurity    = 5
-	exitNodeNotFound    = 6
-	exitWriteReject     = 7
-	exitTimeout         = 8
-	exitOutputError     = 9
+	exitSuccess         = int(exitcode.Success)
+	exitGeneralError    = int(exitcode.General)
+	exitConfigError     = int(exitcode.Config)
+	exitConnection      = int(exitcode.Connection)
+	exitProtocolRequest = int(exitcode.Request)
+	exitAuthSecurity    = int(exitcode.AuthSecurity)
+	exitNodeNotFound    = int(exitcode.ResourceMissing)
+	exitWriteReject     = int(exitcode.Rejected)
+	exitTimeout         = int(exitcode.Timeout)
+	exitOutputError     = int(exitcode.Output)
 )
 
 func mapExitCode(err error) int {
