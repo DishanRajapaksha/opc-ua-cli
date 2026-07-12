@@ -90,62 +90,7 @@ func (a *App) Run(args []string) int {
 }
 
 func (a *App) printUsage() {
-	fmt.Fprintln(a.out, `opc-ua-cli is a small OPC UA command-line client.
-
-Usage:
-  opc-ua-cli [global flags] <command> [flags]
-  opc-ua-cli endpoints --profile local
-  opc-ua-cli namespaces --profile local
-  opc-ua-cli browse --profile local --node i=84 --depth 1
-  opc-ua-cli tui --profile local --node i=84 --interval 1s
-  opc-ua-cli attributes --profile local --node 'ns=2;s=Demo.Value'
-  opc-ua-cli read --profile site-a --node 'ns=2;s=Demo.Static.Scalar.Int32'
-  opc-ua-cli write --profile site-a --node 'ns=2;s=Demo.Static.Scalar.Int32' --type int32 --value 42
-  opc-ua-cli monitor --profile site-a --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s
-  opc-ua-cli watch --profile site-a --node 'ns=2;s=Demo.Static.Scalar.Int32' --interval 1s
-  opc-ua-cli alarms --profile site-a --node i=2253 --min-severity 500 --interval 1s
-  opc-ua-cli test-connection --profile site-a
-  opc-ua-cli validate-config --profile site-a
-  opc-ua-cli completions zsh
-  opc-ua-cli init-config
-  opc-ua-cli init-config --output site-a.yaml
-  opc-ua-cli init-config --force
-  opc-ua-cli version
-
-Commands:
-  version            Print version information
-  endpoints           List server endpoints and security options
-  status              Read server status
-  namespaces          List namespace indexes and URIs
-  browse              Browse child nodes
-  tui                 Browse nodes interactively
-  attributes          Inspect node metadata attributes
-  read                Read a node value
-  write               Write a scalar node value
-  monitor             Subscribe to data changes
-  watch               Poll node values without subscriptions
-  alarms              Subscribe to OPC UA alarm and event notifications
-  test-connection     Run connection/auth/security diagnostics
-  validate-config     Validate local config without server connection
-  completions         Generate shell completion scripts
-  init-config         Write a starter YAML config file
-
-Common flags:
-  --config     YAML config file, defaults to config.yaml
-  --profile    Config profile name; uses default_profile when omitted
-  --endpoint   OPC UA endpoint URL
-  --policy     Security policy
-  --mode       Security mode
-  --username   Username authentication
-  --password   Password authentication
-  --cert       Client certificate file
-  --key        Client private key file
-  --timeout    Request timeout
-  --format     snapshots: table, text, json, csv; streams: text, jsonl, csv
-  --verbose    Print high-level connection decisions
-  --debug      Enable lower-level OPC UA client debug logging
-
-CLI flags override values loaded from --config and --profile.`)
+	a.writeRegistryUsage()
 }
 
 func normaliseGlobalFlags(args []string) ([]string, error) {
