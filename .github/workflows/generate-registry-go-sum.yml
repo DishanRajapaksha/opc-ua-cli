@@ -1,4 +1,4 @@
-name: Generate registry go.sum
+name: Generate registry module files
 
 on:
   push:
@@ -17,8 +17,12 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - run: go mod tidy
+      - run: |
+          go get github.com/DishanRajapaksha/industrial-cli-kit@affb87edac45
+          go mod tidy
       - uses: actions/upload-artifact@v4
         with:
-          name: registry-go-sum
-          path: go.sum
+          name: registry-module-files
+          path: |
+            go.mod
+            go.sum
